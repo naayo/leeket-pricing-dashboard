@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leeket - Tableau de Bord Professionnel</title>
+    <script src="auth-simple.js"></script>
+    <script src="sheets-simple.js"></script>
+    <script src="analytics-module.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo h1 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .user-role {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+
+        /* Navigation */
+        .nav-container {
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            position: sticky;
+            top: 70px;
+            z-index: 99;
+        }
+
+        .nav-tabs {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 40px;
+            padding: 0 30px;
+        }
+
+        .nav-tab {
+            padding: 15px 0;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            color: #7f8c8d;
+            font-weight: 500;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            color: #3498db;
+        }
+
+        .nav-tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 8px;
+            right: -15px;
+            background: #e74c3c;
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .quick-action {
+            background: white;
+            border: 1px solid #e0e0e0;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+        }
+
+        .quick-action:hover {
+            background: #f8f9fa;
+            border-color: #3498db;
+            transform: translateY(-1px);
+        }
+
+        .quick-action-icon {
+            font-size: 1.2rem;
+        }
+
+        /* KPI Cards */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .kpi-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+        }
+
+        .kpi-card.success::before {
+            background: #27ae60;
+        }
+
+        .kpi-card.warning::before {
+            background: #f39c12;
+        }
+
+        .kpi-card.danger::before {
+            background: #e74c3c;
+        }
+
+        .kpi-card.info::before {
+            background: #3498db;
+        }
+
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .kpi-label {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .kpi-icon {
+            font-size: 1.5rem;
+            opacity: 0.3;
+        }
+
+        .kpi-value {
+            font-size: 2.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .kpi-comparison {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .kpi-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .kpi-trend.up {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .kpi-trend.down {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .kpi-subtitle {
+            color: #95a5a6;
+            font-size: 0.85rem;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        /* Data Tables */
+        .data-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .data-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .data-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .data-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #229954;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 1px solid #ddd;
+            color: #7f8c8d;
+        }
+
+        .btn-outline:hover {
+            border-color: #3498db;
+            color: #3498db;
+        }
+
+        /* Table Styles */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #f8f9fa;
+        }
+
+        .data-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .data-table td {
+            padding: 14px 12px;
+            border-bottom: 1px solid #f5f6fa;
+            color: #2c3e50;
+        }
+
+        .data-table tbody tr {
+            transition: all 0.3s;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .product-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .category-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #ecf0f1;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+
+        .price-value {
+            font-weight: 600;
+            color: #3498db;
+        }
+
+        .margin-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .margin-excellent {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .margin-good {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .margin-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .margin-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .classification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-star {
+            background: linear-gradient(135deg, #f39c12, #f1c40f);
+            color: white;
+        }
+
+        .badge-vache {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .badge-dilemme {
+            background: linear-gradient(135deg, #3498db, #5dade2);
+            color: white;
+        }
+
+        .badge-poids {
+            background: linear-gradient(135deg, #95a5a6, #bdc3c7);
+            color: white;
+        }
+
+        /* Alerts Section */
+        .alerts-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .alerts-title {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .alert-item {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid;
+            background: #f8f9fa;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .alert-item:hover {
+            transform: translateX(5px);
+        }
+
+        .alert-critical {
+            border-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .alert-warning {
+            border-color: #f39c12;
+            background: #fffbf0;
+        }
+
+        .alert-info {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+
+        .alert-success {
+            border-color: #27ae60;
+            background: #f0fff4;
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .alert-type {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: inherit;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: #95a5a6;
+        }
+
+        .alert-message {
+            color: #2c3e50;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .alert-action {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #3498db;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .chart-period {
+            display: flex;
+            gap: 10px;
+        }
+
+        .period-btn {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            transition: all 0.3s;
+        }
+
+        .period-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Simulation Panel */
+        .simulation-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .sim-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .sim-title {
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .sim-group {
+            margin-bottom: 20px;
+        }
+
+        .sim-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .sim-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .sim-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .sim-slider {
+            width: 100%;
+            margin: 15px 0;
+        }
+
+        .slider-value {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .sim-results {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .result-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .result-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+
+        .result-value.positive {
+            color: #27ae60;
+        }
+
+        .result-value.negative {
+            color: #e74c3c;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #95a5a6;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #95a5a6;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+
+        .empty-message {
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .simulation-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-tabs {
+                overflow-x: auto;
+                padding-bottom: 5px;
+            }
+
+            .quick-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🍽️</div>
+                <h1>Leeket Pro</h1>
+            </div>
+            <div class="user-section">
+                <div class="user-info">
+                    <span class="user-name" id="userName">Utilisateur</span>
+                    <span class="user-role">Administrateur</span>
+                </div>
+                <button class="btn-logout" onclick="logout()">Déconnexion</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-container">
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="switchTab('dashboard')">
+                Tableau de Bord
+            </div>
+            <div class="nav-tab" onclick="switchTab('products')">
+                Produits & Prix
+            </div>
+            <div class="nav-tab" onclick="switchTab('competition')">
+                Concurrence
+            </div>
+            <div class="nav-tab" onclick="switchTab('simulation')">
+                Simulateur
+            </div>
+            <div class="nav-tab" onclick="switchTab('reports')">
+                Rapports
+                <span class="nav-badge">2</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Dashboard Tab -->
+        <div id="dashboard-tab" class="tab-content active">
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <div class="quick-action" onclick="syncData()">
+                    <span class="quick-action-icon">🔄</span>
+                    <span>Synchroniser</span>
+                </div>
+                <div class="quick-action" onclick="exportData()">
+                    <span class="quick-action-icon">📊</span>
+                    <span>Exporter</span>
+                </div>
+                <div class="quick-action" onclick="showSettings()">
+                    <span class="quick-action-icon">⚙️</span>
+                    <span>Paramètres</span>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card success">
+                    <div class="kpi-header">
+                        <div class="kpi-label">Coût Matière Moyen</div>
+                        <div class="kpi-icon">🥘</div>
+                    </div>
+                    <div class="kpi-value" id="kpiFood Poursuivre]
+}">28%</div>
+                    <div class="kpi-comparison">
+                        <span class="kpi-trend up">↑ 2%</span>
+                        <span class="kpi-subtitle">vs mois dernier</span>
+                    </div>
+                    <div class="kpi-subtitle">Objectif : < 30%</div>
+                </div>
+
+                <div class="kpi-card warning">
+                    <div class="kpi-header">
+                        <div class="kpi-label">Rentabilité Moyenne</div>
+                        <div class="kpi-icon">💰</div>
+                    </div>
+                    <div class="kpi-value" id="kpiMargin">45%</div>
+                    <div class="kpi-comparison">
+                        <span class="kpi-trend down">↓ 3%</span>
+                        <span class="kpi-subtitle">vs mois dernier</span>
+                    </div>
+                    <div class="kpi-subtitle">Objectif : > 50%</div>
+                </div>
+
+                <div class="kpi-card info">
+                    <div class="kpi-header">
+                        <div class="kpi-label">Ticket Moyen</div>
+                        <div class="kpi-icon">🛒</div>
+                    </div>
+                    <div class="kpi-value" id="kpiTicket">18 500 F</div>
+                    <div class="kpi-comparison">
+                        <span class="kpi-trend up">↑ 12%</span>
+                        <span class="kpi-subtitle">vs objectif</span>
+                    </div>
+                    <div class="kpi-subtitle">Cible : 20 000 FCFA</div>
+                </div>
+
+                <div class="kpi-card danger">
+                    <div class="kpi-header">
+                        <div class="kpi-label">Actions Requises</div>
+                        <div class="kpi-icon">⚠️</div>
+                    </div>
+                    <div class="kpi-value" id="kpiAlerts">3</div>
+                    <div class="kpi-comparison">
+                        <span style="color: #e74c3c;">2 urgentes</span>
+                        <span class="kpi-subtitle">• 1 modérée</span>
+                    </div>
+                    <div class="kpi-subtitle">À traiter rapidement</div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="main-grid">
+                <!-- Products Table -->
+                <div class="data-card">
+                    <div class="data-header">
+                        <h2 class="data-title">
+                            <span>📦</span>
+                            <span>Analyse des Produits</span>
+                        </h2>
+                        <div class="data-actions">
+                            <button class="btn btn-outline">Filtrer</button>
+                            <button class="btn btn-success" onclick="syncData()">
+                                <span>🔄</span>
+                                <span>Actualiser</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Catégorie</th>
+                                <th>Prix Vente</th>
+                                <th>Coût</th>
+                                <th>Marge</th>
+                                <th>Performance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable">
+                            <!-- Contenu dynamique -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Alerts -->
+                <div class="alerts-container">
+                    <div class="alerts-header">
+                        <h3 class="alerts-title">🔔 Notifications & Alertes</h3>
+                        <button class="btn btn-outline" style="padding: 4px 8px; font-size: 0.8rem;">
+                            Tout voir
+                        </button>
+                    </div>
+
+                    <div id="alertsList">
+                        <div class="alert-item alert-critical">
+                            <div class="alert-header">
+                                <span class="alert-type">⚠️ URGENT</span>
+                                <span class="alert-time">Il y a 2h</span>
+                            </div>
+                            <div class="alert-message">
+                                <strong>Coût matière élevé :</strong> Thieboudienne dépasse 35% de coût matière (actuellement 37%)
+                            </div>
+                            <div class="alert-action">→ Revoir les portions ou négocier les prix</div>
+                        </div>
+
+                        <div class="alert-item alert-warning">
+                            <div class="alert-header">
+                                <span class="alert-type">📉 ATTENTION</span>
+                                <span class="alert-time">Il y a 5h</span>
+                            </div>
+                            <div class="alert-message">
+                                <strong>Baisse des ventes :</strong> Yassa Poulet -15% cette semaine
+                            </div>
+                            <div class="alert-action">→ Lancer une promotion</div>
+                        </div>
+
+                        <div class="alert-item alert-success">
+                            <div class="alert-header">
+                                <span class="alert-type">💡 OPPORTUNITÉ</span>
+                                <span class="alert-time">Hier</span>
+                            </div>
+                            <div class="alert-message">
+                                <strong>Prix optimisable :</strong> Bissap peut supporter +500 FCFA (marge actuelle 60%)
+                            </div>
+                            <div class="alert-action">→ Tester nouveau prix</div>
+                        </div>
+
+                        <div class="alert-item alert-info">
+                            <div class="alert-header">
+                                <span class="alert-type">📊 INFO</span>
+                                <span class="alert-time">Cette semaine</span>
+                            </div>
+                            <div class="alert-message">
+                                <strong>Nouveau record :</strong> Ticket moyen atteint 22 000 FCFA le weekend
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">📈 Évolution des Marges</h3>
+                        <div class="chart-period">
+                            <button class="period-btn">Jour</button>
+                            <button class="period-btn active">Semaine</button>
+                            <button class="period-btn">Mois</button>
+                        </div>
+                    </div>
+                    <canvas id="marginChart" style="max-height: 300px;"></canvas>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3 class="chart-title">🍽️ Répartition des Ventes</h3>
+                        <div class="chart-period">
+                            <button class="period-btn active">Aujourd'hui</button>
+                            <button class="period-btn">7 jours</button>
+                        </div>
+                    </div>
+                    <canvas id="salesChart" style="max-height: 300px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Tab -->
+        <div id="products-tab" class="tab-content">
+            <div class="data-card">
+                <div class="data-header">
+                    <h2 class="data-title">
+                        <span>📊</span>
+                        <span>Matrice de Performance (BCG)</span>
+                    </h2>
+                </div>
+
+                <div style="padding: 20px;">
+                    <canvas id="bcgMatrix" style="max-height: 400px;"></canvas>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 30px;">
+                    <div style="padding: 15px; background: #fff3cd; border-radius: 8px;">
+                        <h4 style="color: #856404; margin-bottom: 10px;">⭐ Étoiles</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Forte rentabilité + Forte demande</p>
+                        <p style="font-size: 0.85rem; color: #856404; margin-top: 10px;">
+                            <strong>Action :</strong> Maintenir la qualité et la visibilité
+                        </p>
+                    </div>
+
+                    <div style="padding: 15px; background: #d4edda; border-radius: 8px;">
+                        <h4 style="color: #155724; margin-bottom: 10px;">🐄 Vaches à Lait</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Forte rentabilité + Demande stable</p>
+                        <p style="font-size: 0.85rem; color: #155724; margin-top: 10px;">
+                            <strong>Action :</strong> Optimiser les coûts
+                        </p>
+                    </div>
+
+                    <div style="padding: 15px; background: #cce5ff; border-radius: 8px;">
+                        <h4 style="color: #004085; margin-bottom: 10px;">❓ Dilemmes</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Rentabilité moyenne + Potentiel</p>
+                        <p style="font-size: 0.85rem; color: #004085; margin-top: 10px;">
+                            <strong>Action :</strong> Investir ou repositionner
+                        </p>
+                    </div>
+
+                    <div style="padding: 15px; background: #f8d7da; border-radius: 8px;">
+                        <h4 style="color: #721c24; margin-bottom: 10px;">🔻 Poids Morts</h4>
+                        <p style="font-size: 0.9rem; color: #666;">Faible rentabilité + Faible demande</p>
+                        <p style="font-size: 0.85rem; color: #721c24; margin-top: 10px;">
+                            <strong>Action :</strong> Retirer ou reformuler
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competition Tab -->
+        <div id="competition-tab" class="tab-content">
+            <div class="data-card">
+                <div class="data-header">
+                    <h2 class="data-title">
+                        <span>🏆</span>
+                        <span>Analyse Concurrentielle</span>
+                    </h2>
+                    <div class="data-actions">
+                        <button class="btn btn-primary" onclick="loadCompetitionData()">
+                            <span>📥</span>
+                            <span>Importer Données</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="competitionContent">
+                    <div class="empty-state">
+                        <div class="empty-icon">📊</div>
+                        <h3 class="empty-title">Configuration requise</h3>
+                        <p class="empty-message">
+                            Importez un fichier Google Sheets avec les prix de vos concurrents<br>
+                            Format identique à votre fichier de prix actuel
+                        </p>
+                        <button class="btn btn-primary" style="margin-top: 20px;" onclick="showCompetitionSetup()">
+                            Configurer la Source
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Simulation Tab -->
+        <div id="simulation-tab" class="tab-content">
+            <div class="simulation-grid">
+                <div class="sim-card">
+                    <h3 class="sim-title">🎯 Simulateur de Prix</h3>
+
+                    <div class="sim-group">
+                        <label class="sim-label">Sélectionner un produit</label>
+                        <select class="sim-input" id="simProduct" onchange="loadProductData()">
+                            <option value="">Choisir un produit...</option>
+                        </select>
+                    </div>
+
+                    <div class="sim-group">
+                        <label class="sim-label">
+                            Ajustement du prix
+                            <span class="slider-value" id="priceValue">0%</span>
+                        </label>
+                        <input type="range" class="sim-slider" id="priceSlider"
+                               min="-30" max="30" value="0"
+                               oninput="updateSimulation()">
+                    </div>
+
+                    <div class="sim-group">
+                        <label class="sim-label">
+                            Impact estimé sur le volume
+                            <span class="slider-value" id="volumeValue">0%</span>
+                        </label>
+                        <input type="range" class="sim-slider" id="volumeSlider"
+                               min="-50" max="50" value="0"
+                               oninput="updateSimulation()">
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%; padding: 12px;"
+                            onclick="runSimulation()">
+                        🚀 Lancer la Simulation
+                    </button>
+                </div>
+
+                <div class="sim-card">
+                    <h3 class="sim-title">📊 Résultats de la Simulation</h3>
+
+                    <div class="sim-results">
+                        <div class="result-item">
+                            <span class="result-label">Prix actuel</span>
+                            <span class="result-value" id="currentPrice">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Nouveau prix simulé</span>
+                            <span class="result-value" id="newPrice">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Impact sur le CA</span>
+                            <span class="result-value" id="revenueImpact">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Nouvelle marge</span>
+                            <span class="result-value" id="newMargin">-</span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Seuil de rentabilité</span>
+                            <span class="result-value" id="breakeven">-</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                        <h4 style="color: #004085; margin-bottom: 10px;">💡 Recommandation</h4>
+                        <p id="simRecommendation" style="color: #004085; font-size: 0.9rem;">
+                            Sélectionnez un produit et ajustez les paramètres pour voir les recommandations
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports-tab" class="tab-content">
+            <div class="data-card">
+                <h2 class="data-title">📑 Rapports Disponibles</h2>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                    <div style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.3s;"
+                         onmouseover="this.style.borderColor='#3498db'"
+                         onmouseout="this.style.borderColor='#e0e0e0'">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">📊 Rapport Mensuel</h4>
+                        <p style="color: #7f8c8d; font-size: 0.9rem;">Analyse complète des performances du mois</p>
+                        <button class="btn btn-primary" style="margin-top: 15px;">Générer</button>
+                    </div>
+
+                    <div style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.3s;"
+                         onmouseover="this.style.borderColor='#27ae60'"
+                         onmouseout="this.style.borderColor='#e0e0e0'">
+                        <h4 style="color: #2c3e50; margin-bottom: 10px;">💰 Analyse des Marges</h4>
+                        <p style="color: #7f8c8d; font-size: 0.9rem;">Détail des marges par produit et catégorie</p>
+                        <button class="btn btn-success" style="margin-top: 15px;">Générer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentProducts = [];
+        let charts = {};
+        let competitionData = [];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Vérifier authentification
+            if (!AUTH.isLoggedIn()) {
+                window.location.href = 'login-simple.html';
+                return;
+            }
+
+            // Afficher utilisateur
+            const user = AUTH.getCurrentUser();
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+            }
+
+            // Charger les données
+            await loadData();
+            initializeCharts();
+            populateSimulator();
+        });
+
+        // Charger les données
+        async function loadData() {
+            try {
+                const products = await SHEETS.loadData();
+                currentProducts = enhanceProducts(products);
+                displayProducts();
+                updateKPIs();
+            } catch (error) {
+                console.error('Erreur chargement:', error);
+            }
+        }
+
+        // Enrichir les données produits
+        function enhanceProducts(products) {
+            return products.map(product => {
+                const foodCost = ((product.cost / product.price) * 100).toFixed(1);
+                const popularity = Math.floor(Math.random() * 100) + 1;
+
+                let classification = '';
+                if (product.margin >= 45 && popularity >= 60) {
+                    classification = 'star';
+                } else if (product.margin >= 45 && popularity < 60) {
+                    classification = 'vache';
+                } else if (product.margin < 45 && popularity >= 60) {
+                    classification = 'dilemme';
+                } else {
+                    classification = 'poids';
+                }
+
+                return {
+                    ...product,
+                    foodCost,
+                    popularity,
+                    classification
+                };
+            });
+        }
+
+        // Afficher les produits
+        function displayProducts() {
+            const tbody = document.getElementById('productsTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = currentProducts.map(product => {
+                const marginClass = product.margin >= 50 ? 'margin-excellent' :
+                                   product.margin >= 40 ? 'margin-good' :
+                                   product.margin >= 30 ? 'margin-warning' : 'margin-danger';
+
+                const classMap = {
+                    'star': { badge: 'badge-star', text: '⭐ Étoile' },
+                    'vache': { badge: 'badge-vache', text: '🐄 Vache' },
+                    'dilemme': { badge: 'badge-dilemme', text: '❓ Dilemme' },
+                    'poids': { badge: 'badge-poids', text: '🔻 Poids' }
+                };
+
+                const classInfo = classMap[product.classification] || classMap['poids'];
+
+                return `
+                    <tr>
+                        <td class="product-name">${product.name}</td>
+                        <td><span class="category-badge">${product.category}</span></td>
+                        <td class="price-value">${formatPrice(product.price)}</td>
+                        <td>${formatPrice(product.cost)}</td>
+                        <td><span class="margin-badge ${marginClass}">${product.margin}%</span></td>
+                        <td><span class="classification-badge ${classInfo.badge}">${classInfo.text}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Mettre à jour les KPIs
+        function updateKPIs() {
+            if (!currentProducts.length) return;
+
+            // Coût matière moyen
+            const avgFoodCost = currentProducts.reduce((sum, p) =>
+                sum + parseFloat(p.foodCost || 0), 0) / currentProducts.length;
+            document.getElementById('kpiFoodCost').textContent = avgFoodCost.toFixed(1) + '%';
+
+            // Marge moyenne
+            const avgMargin = currentProducts.reduce((sum, p) =>
+                sum + parseFloat(p.margin || 0), 0) / currentProducts.length;
+            document.getElementById('kpiMargin').textContent = avgMargin.toFixed(0) + '%';
+
+            // Ticket moyen
+            const avgPrice = currentProducts.reduce((sum, p) =>
+                sum + (p.price || 0), 0) / currentProducts.length;
+            document.getElementById('kpiTicket').textContent = formatShortPrice(avgPrice * 2.5);
+        }
+
+        // Initialiser les graphiques
+        function initializeCharts() {
+            // Graphique des marges
+            const marginCtx = document.getElementById('marginChart');
+            if (marginCtx) {
+                charts.margin = new Chart(marginCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'],
+                        datasets: [{
+                            label: 'Marge moyenne (%)',
+                            data: [42, 44, 43, 46, 48, 52, 50],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `Marge: ${context.parsed.y}%`
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                min: 30,
+                                max: 60,
+                                ticks: {
+                                    callback: (value) => value + '%'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Graphique des ventes
+            const salesCtx = document.getElementById('salesChart');
+            if (salesCtx && currentProducts.length) {
+                charts.sales = new Chart(salesCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: currentProducts.map(p => p.name),
+                        datasets: [{
+                            data: currentProducts.map(p => Math.floor(Math.random() * 100) + 20),
+                            backgroundColor: [
+                                '#3498db',
+                                '#2ecc71',
+                                '#f39c12',
+                                '#e74c3c',
+                                '#9b59b6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Matrice BCG
+            const bcgCtx = document.getElementById('bcgMatrix');
+            if (bcgCtx && currentProducts.length) {
+                charts.bcg = new Chart(bcgCtx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Produits',
+                            data: currentProducts.map(p => ({
+                                x: p.popularity,
+                                y: parseFloat(p.margin),
+                                label: p.name
+                            })),
+                            backgroundColor: currentProducts.map(p => {
+                                if (p.classification === 'star') return '#f39c12';
+                                if (p.classification === 'vache') return '#27ae60';
+                                if (p.classification === 'dilemme') return '#3498db';
+                                return '#95a5a6';
+                            }),
+                            pointRadius: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => {
+                                        const point = context.raw;
+                                        return `${point.label}: Popularité ${point.x}, Marge ${point.y}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Popularité (Demande)'
+                                },
+                                min: 0,
+                                max: 100
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Marge (%)'
+                                },
+                                min: 20,
+                                max: 70
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Peupler le simulateur
+        function populateSimulator() {
+            const select = document.getElementById('simProduct');
+            if (select) {
+                select.innerHTML = '<option value="">Choisir un produit...</option>' +
+                    currentProducts.map(p =>
+                        `<option value="${p.name}">${p.name}</option>`
+                    ).join('');
+            }
+        }
+
+        // Charger données produit pour simulation
+        function loadProductData() {
+            const productName = document.getElementById('simProduct').value;
+            const product = currentProducts.find(p => p.name === productName);
+
+            if (product) {
+                document.getElementById('currentPrice').textContent = formatPrice(product.price);
+                document.getElementById('priceSlider').value = 0;
+                document.getElementById('volumeSlider').value = 0;
+                updateSimulation();
+            }
+        }
+
+        // Mettre à jour la simulation
+        function updateSimulation() {
+            const priceAdjust = document.getElementById('priceSlider').value;
+            const volumeImpact = document.getElementById('volumeSlider').value;
+
+            document.getElementById('priceValue').textContent =
+                (priceAdjust >= 0 ? '+' : '') + priceAdjust + '%';
+            document.getElementById('volumeValue').textContent =
+                (volumeImpact >= 0 ? '+' : '') + volumeImpact + '%';
+        }
+
+        // Lancer la simulation
+        function runSimulation() {
+            const productName = document.getElementById('simProduct').value;
+            if (!productName) {
+                alert('Veuillez sélectionner un produit');
+                return;
+            }
+
+            const product = currentProducts.find(p => p.name === productName);
+            const priceAdjust = parseFloat(document.getElementById('priceSlider').value);
+            const volumeImpact = parseFloat(document.getElementById('volumeSlider').value);
+
+            // Calculs
+            const newPrice = Math.round(product.price * (1 + priceAdjust/100));
+            const newMargin = ((newPrice - product.cost) / newPrice * 100).toFixed(1);
+            const revenueChange = priceAdjust + volumeImpact;
+            const breakeven = Math.ceil(product.cost / newPrice * 100);
+
+            // Affichage
+            document.getElementById('newPrice').textContent = formatPrice(newPrice);
+            document.getElementById('newMargin').textContent = newMargin + '%';
+            document.getElementById('revenueImpact').textContent =
+                (revenueChange >= 0 ? '+' : '') + revenueChange.toFixed(0) + '%';
+            document.getElementById('revenueImpact').className =
+                revenueChange >= 0 ? 'result-value positive' : 'result-value negative';
+            document.getElementById('breakeven').textContent = breakeven + ' unités';
+
+            // Recommandation
+            let recommendation = '';
+            if (newMargin < 30) {
+                recommendation = '⚠️ Attention: La marge devient trop faible. Risque pour la rentabilité.';
+            } else if (priceAdjust > 10 && volumeImpact < -20) {
+                recommendation = '📉 L\'augmentation de prix pourrait fortement impacter le volume. Procédez par étapes.';
+            } else if (newMargin > 50 && priceAdjust > 0) {
+                recommendation = '✅ Excellente opportunité! La marge reste très bonne malgré l\'augmentation.';
+            } else if (priceAdjust < -10) {
+                recommendation = '💡 Une baisse de prix peut stimuler les ventes, mais surveillez la rentabilité.';
+            } else {
+                recommendation = '👍 Ajustement équilibré. Testez sur une période limitée avant généralisation.';
+            }
+
+            document.getElementById('simRecommendation').textContent = recommendation;
+        }
+
+        // Changer d'onglet
+        function switchTab(tabName) {
+            // Mise à jour navigation
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Mise à jour contenu
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+
+            const targetTab = document.getElementById(tabName + '-tab');
+            if (targetTab) {
+                targetTab.classList.add('active');
+            }
+        }
+
+        // Synchroniser les données
+        async function syncData() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Synchronisation...';
+
+            try {
+                await loadData();
+                alert('✅ Données synchronisées avec succès !');
+            } catch (error) {
+                alert('❌ Erreur lors de la synchronisation');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<span>🔄</span><span>Synchroniser</span>';
+            }
+        }
+
+        // Fonctions utilitaires
+        function formatPrice(price) {
+            return new Intl.NumberFormat('fr-FR').format(price || 0) + ' FCFA';
+        }
+
+        function formatShortPrice(price) {
+            return new Intl.NumberFormat('fr-FR').format(Math.round(price / 1000) * 1000) + ' F';
+        }
+
+        function logout() {
+            AUTH.logout();
+        }
+
+        function exportData() {
+            alert('📊 Export en cours de développement');
+        }
+
+        function showSettings() {
+            window.location.href = 'config-panel.html';
+        }
+
+        function loadCompetitionData() {
+            alert('📥 Importation des données concurrence à venir');
+        }
+
+        function showCompetitionSetup() {
+            alert('⚙️ Configuration de la source de données concurrence');
+        }
+    </script>
+</body>
+</html>
