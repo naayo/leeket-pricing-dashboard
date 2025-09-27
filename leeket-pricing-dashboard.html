@@ -637,8 +637,8 @@
                 </div>
             </div>
 
-            <!-- Option de connexion Google Sheets -->
-            <div id="googleSheetsSetup" style="margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+            <!-- Option de connexion Google Sheets (masqué par défaut) -->
+            <div id="googleSheetsSetup" style="display: none; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
                 <h3 style="margin-bottom: 10px;"><i class="fas fa-link"></i> Connecter Google Sheets</h3>
                 <p style="margin-bottom: 15px; opacity: 0.95;">Synchronisez automatiquement vos données depuis Google Sheets</p>
                 <button onclick="configureGoogleSheets()" style="background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
@@ -647,7 +647,7 @@
             </div>
 
             <!-- Upload manuel (optionnel) -->
-            <div style="text-align: center; margin: 20px 0;">
+            <div id="uploadSeparator" style="display: none; text-align: center; margin: 20px 0;">
                 <p style="color: #666; margin-bottom: 10px;">ou</p>
             </div>
 
@@ -963,34 +963,44 @@
             if (window.currentUsername === 'baila') {
                 hasGoogleSheetsAccess = true;
             } else if (savedPermissions) {
-                const permissions = JSON.parse(savedPermissions);
-                if (permissions[window.currentUsername]) {
-                    hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess === true;
+                try {
+                    const permissions = JSON.parse(savedPermissions);
+                    if (permissions[window.currentUsername]) {
+                        hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess === true;
+                    }
+                } catch(e) {
+                    console.error('Erreur parsing permissions:', e);
                 }
             }
 
-            console.log('Accès Google Sheets:', hasGoogleSheetsAccess);
+            console.log('Accès Google Sheets pour', window.currentUsername, ':', hasGoogleSheetsAccess);
 
-            // Toujours masquer d'abord pour les non-autorisés
+            // Récupérer les éléments
             const googleSheetsSetup = document.getElementById('googleSheetsSetup');
             const googleSheetsStatus = document.getElementById('googleSheetsStatus');
-            const separator = document.querySelector('.upload-section > div[style*="text-align: center"]');
+            const uploadSeparator = document.getElementById('uploadSeparator');
 
-            if (!hasGoogleSheetsAccess) {
-                // Masquer la section Google Sheets pour les utilisateurs non autorisés
+            if (hasGoogleSheetsAccess) {
+                // Afficher pour les utilisateurs autorisés
+                console.log('Affichage Google Sheets pour:', window.currentUsername);
+                if (googleSheetsSetup) {
+                    googleSheetsSetup.style.display = 'block';
+                }
+                if (uploadSeparator) {
+                    uploadSeparator.style.display = 'block';
+                }
+                // Le statut sera affiché par checkGoogleSheetsConfig si configuré
+            } else {
+                // Masquer pour les non-autorisés
+                console.log('Masquage Google Sheets pour:', window.currentUsername);
                 if (googleSheetsSetup) {
                     googleSheetsSetup.style.display = 'none';
-                    console.log('Google Sheets Setup masqué');
                 }
-
                 if (googleSheetsStatus) {
                     googleSheetsStatus.style.display = 'none';
-                    console.log('Google Sheets Status masqué');
                 }
-
-                // Masquer le séparateur "ou"
-                if (separator) {
-                    separator.style.display = 'none';
+                if (uploadSeparator) {
+                    uploadSeparator.style.display = 'none';
                 }
 
                 // Modifier le titre de la section
@@ -998,34 +1008,26 @@
                 if (sectionTitle) {
                     sectionTitle.innerHTML = '<i class="fas fa-file-excel"></i> Importer vos données de prix';
                 }
-            } else {
-                // Afficher pour les utilisateurs autorisés
-                if (googleSheetsSetup) {
-                    googleSheetsSetup.style.display = 'block';
-                }
-                if (separator) {
-                    separator.style.display = 'block';
-                }
             }
 
             // Ajouter le bouton admin pour baila
             if (window.currentUsername === 'baila' && window.currentUserRole === 'admin') {
-                const headerDiv = document.querySelector('.header > div[style*="position: absolute"]');
-                if (headerDiv && !document.getElementById('adminButton')) {
-                    const adminBtn = document.createElement('button');
-                    adminBtn.id = 'adminButton';
-                    adminBtn.onclick = function() {
-                        window.location.href = 'admin-panel.html';
-                    };
-                    adminBtn.style.cssText = 'background: rgba(255,215,0,0.3); color: white; border: 1px solid rgba(255,215,0,0.5); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px;';
-                    adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
-
-                    // Insérer avant le bouton de déconnexion
+                setTimeout(function() {
                     const logoutBtn = document.getElementById('logoutBtn');
-                    if (logoutBtn) {
-                        headerDiv.insertBefore(adminBtn, logoutBtn);
+                    if (logoutBtn && !document.getElementById('adminButton')) {
+                        const adminBtn = document.createElement('button');
+                        adminBtn.id = 'adminButton';
+                        adminBtn.onclick = function() {
+                            window.location.href = 'admin-panel.html';
+                        };
+                        adminBtn.style.cssText = 'background: #FFD700; color: #333; border: 1px solid #FFC700; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px; font-weight: bold;';
+                        adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin Panel';
+
+                        // Insérer avant le bouton de déconnexion
+                        logoutBtn.parentNode.insertBefore(adminBtn, logoutBtn);
+                        console.log('Bouton admin ajouté pour baila');
                     }
-                }
+                }, 200);
             }
         }
 
