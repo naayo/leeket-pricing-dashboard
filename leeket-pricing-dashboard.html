@@ -894,21 +894,32 @@
         // ==================== INITIALISATION ====================
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Vérifier l'authentification
-            checkAuthentication();
+            // Vérifier l'authentification (DOIT être fait en premier)
+            if (!checkAuthentication()) {
+                return; // Stop si non authentifié
+            }
+
             initializeApp();
-
-            // Vérifier si Google Sheets est configuré
-            checkGoogleSheetsConfig();
-
             setupEventListeners();
             initializeCharts();
 
-            // Ajouter l'écouteur pour le bouton de déconnexion
-            const logoutBtn = document.getElementById('logoutBtn');
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', logout);
-            }
+            // Attendre que le DOM soit complètement chargé avant d'appliquer les restrictions
+            setTimeout(function() {
+                // Appliquer les restrictions de rôle
+                applyRoleRestrictions();
+
+                // Vérifier si Google Sheets est configuré
+                checkGoogleSheetsConfig();
+
+                // Ajouter l'écouteur pour le bouton de déconnexion
+                const logoutBtn = document.getElementById('logoutBtn');
+                if (logoutBtn) {
+                    logoutBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        logout();
+                    });
+                }
+            }, 100);
         });
 
         function checkAuthentication() {
@@ -917,7 +928,7 @@
             if (!token || !isValidToken(token)) {
                 // Rediriger vers la page de connexion
                 window.location.href = 'index.html';
-                return;
+                return false;
             }
 
             // Afficher les informations de l'utilisateur et gérer les permissions
@@ -932,41 +943,54 @@
                 window.currentUserRole = data.role || 'user';
                 window.currentUsername = data.username;
 
-                // Appliquer les restrictions basées sur le rôle
-                applyRoleRestrictions();
+                console.log('Utilisateur connecté:', window.currentUsername, 'Rôle:', window.currentUserRole);
+                return true;
             } catch (e) {
                 console.error('Erreur de lecture du token');
                 window.location.href = 'index.html';
+                return false;
             }
         }
 
         function applyRoleRestrictions() {
+            console.log('Application des restrictions pour:', window.currentUsername, 'Rôle:', window.currentUserRole);
+
             // Vérifier les permissions sauvegardées
             const savedPermissions = localStorage.getItem('leeketUserPermissions');
             let hasGoogleSheetsAccess = false;
 
-            if (savedPermissions) {
+            // Par défaut, seul baila a accès
+            if (window.currentUsername === 'baila') {
+                hasGoogleSheetsAccess = true;
+            } else if (savedPermissions) {
                 const permissions = JSON.parse(savedPermissions);
                 if (permissions[window.currentUsername]) {
-                    hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess;
+                    hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess === true;
                 }
-            } else {
-                // Par défaut, seul baila a accès
-                hasGoogleSheetsAccess = window.currentUsername === 'baila' && window.currentUserRole === 'admin';
             }
 
-            // Appliquer les restrictions
+            console.log('Accès Google Sheets:', hasGoogleSheetsAccess);
+
+            // Toujours masquer d'abord pour les non-autorisés
+            const googleSheetsSetup = document.getElementById('googleSheetsSetup');
+            const googleSheetsStatus = document.getElementById('googleSheetsStatus');
+            const separator = document.querySelector('.upload-section > div[style*="text-align: center"]');
+
             if (!hasGoogleSheetsAccess) {
                 // Masquer la section Google Sheets pour les utilisateurs non autorisés
-                const googleSheetsSetup = document.getElementById('googleSheetsSetup');
-                const googleSheetsStatus = document.getElementById('googleSheetsStatus');
-
                 if (googleSheetsSetup) {
                     googleSheetsSetup.style.display = 'none';
+                    console.log('Google Sheets Setup masqué');
                 }
 
                 if (googleSheetsStatus) {
                     googleSheetsStatus.style.display = 'none';
+                    console.log('Google Sheets Status masqué');
+                }
+
+                // Masquer le séparateur "ou"
+                if (separator) {
+                    separator.style.display = 'none';
                 }
 
                 // Modifier le titre de la section
@@ -974,11 +998,13 @@
                 if (sectionTitle) {
                     sectionTitle.innerHTML = '<i class="fas fa-file-excel"></i> Importer vos données de prix';
                 }
-
-                // Masquer le séparateur "ou"
-                const separator = document.querySelector('.upload-section div[style*="text-align: center"]');
+            } else {
+                // Afficher pour les utilisateurs autorisés
+                if (googleSheetsSetup) {
+                    googleSheetsSetup.style.display = 'block';
+                }
                 if (separator) {
-                    separator.style.display = 'none';
+                    separator.style.display = 'block';
                 }
             }
 
@@ -1034,20 +1060,22 @@
             // Vérifier si l'utilisateur a les permissions pour Google Sheets
             let hasGoogleSheetsAccess = false;
 
-            const savedPermissions = localStorage.getItem('leeketUserPermissions');
-            if (savedPermissions) {
-                const permissions = JSON.parse(savedPermissions);
-                if (permissions[window.currentUsername]) {
-                    hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess;
-                }
+            // Seul baila a accès par défaut
+            if (window.currentUsername === 'baila') {
+                hasGoogleSheetsAccess = true;
             } else {
-                // Par défaut, seul baila a accès
-                hasGoogleSheetsAccess = window.currentUsername === 'baila' && window.currentUserRole === 'admin';
+                const savedPermissions = localStorage.getItem('leeketUserPermissions');
+                if (savedPermissions) {
+                    const permissions = JSON.parse(savedPermissions);
+                    if (permissions[window.currentUsername]) {
+                        hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess === true;
+                    }
+                }
             }
 
             const config = localStorage.getItem('leeketGoogleSheetConfig');
 
-            if (config && hasGoogleSheetsAccess) {
+            if (hasGoogleSheetsAccess && config) {
                 // Configuration trouvée et utilisateur autorisé
                 const googleSheetsSetup = document.getElementById('googleSheetsSetup');
                 const googleSheetsStatus = document.getElementById('googleSheetsStatus');
@@ -1061,15 +1089,8 @@
                 // Configurer la synchronisation automatique (toutes les 5 minutes)
                 if (autoSyncInterval) clearInterval(autoSyncInterval);
                 autoSyncInterval = setInterval(syncGoogleSheets, 5 * 60 * 1000);
-            } else if (!hasGoogleSheetsAccess) {
-                // Utilisateur non autorisé - charger les données par défaut
-                loadDefaultData();
             } else {
-                // Configuration non trouvée mais utilisateur autorisé
-                if (hasGoogleSheetsAccess) {
-                    const googleSheetsSetup = document.getElementById('googleSheetsSetup');
-                    if (googleSheetsSetup) googleSheetsSetup.style.display = 'block';
-                }
+                // Pas d'accès ou pas de configuration - charger les données par défaut
                 loadDefaultData();
             }
         }
