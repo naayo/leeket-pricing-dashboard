@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leeket - Dashboard Pricing Avancé</title>
+    <script src="auth-simple.js"></script>
+    <script src="sheets-simple.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f6fa;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .btn-logout {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            background: white;
+            padding: 0 30px;
+            border-bottom: 2px solid #f5f6fa;
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-tab {
+            padding: 15px 0;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            color: #7f8c8d;
+            transition: all 0.3s;
+        }
+
+        .nav-tab.active {
+            color: #3498db;
+            border-bottom-color: #3498db;
+        }
+
+        /* Container */
+        .container {
+            padding: 30px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* KPI Cards Grid */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card.alert {
+            border-left: 4px solid #e74c3c;
+        }
+
+        .kpi-card.warning {
+            border-left: 4px solid #f39c12;
+        }
+
+        .kpi-card.success {
+            border-left: 4px solid #27ae60;
+        }
+
+        .kpi-label {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .kpi-trend {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.9rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .kpi-trend.up {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .kpi-trend.down {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .kpi-subtitle {
+            color: #95a5a6;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        /* Main Content Grid */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+        }
+
+        /* Data Section */
+        .data-section {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+        }
+
+        /* Advanced Table */
+        .advanced-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .advanced-table thead {
+            background: #f8f9fa;
+        }
+
+        .advanced-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .advanced-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f5f6fa;
+            color: #2c3e50;
+        }
+
+        .advanced-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Product Performance Indicators */
+        .performance-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .performance-badge.star {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .performance-badge.puzzle {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .performance-badge.plow {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .performance-badge.dog {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Charts Container */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        /* Simulation Panel */
+        .simulation-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .sim-input-group {
+            margin-bottom: 20px;
+        }
+
+        .sim-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .sim-input-group input,
+        .sim-input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .sim-slider {
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .sim-result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+
+        .sim-result-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .sim-result-label {
+            color: #7f8c8d;
+        }
+
+        .sim-result-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* Alerts Panel */
+        .alerts-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .alert-item {
+            padding: 12px;
+            border-left: 4px solid;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background: #f8f9fa;
+        }
+
+        .alert-item.critical {
+            border-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .alert-item.warning {
+            border-color: #f39c12;
+            background: #fffbf0;
+        }
+
+        .alert-item.info {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+
+        .alert-time {
+            font-size: 0.75rem;
+            color: #95a5a6;
+        }
+
+        .alert-message {
+            margin-top: 5px;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .btn-sync {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #95a5a6;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>📊 Leeket Analytics Pro</h1>
+        <div class="user-section">
+            <span id="userName">Utilisateur</span>
+            <button class="btn-logout" onclick="logout()">Déconnexion</button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav-tabs">
+        <div class="nav-tab active" onclick="switchTab('overview')">Vue d'ensemble</div>
+        <div class="nav-tab" onclick="switchTab('pricing')">Analyse Pricing</div>
+        <div class="nav-tab" onclick="switchTab('competition')">Concurrence</div>
+        <div class="nav-tab" onclick="switchTab('simulation')">Simulations</div>
+        <div class="nav-tab" onclick="switchTab('alerts')">Alertes</div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active">
+            <!-- KPI Grid -->
+            <div class="kpi-grid">
+                <div class="kpi-card success">
+                    <div class="kpi-label">Food Cost Moyen</div>
+                    <div class="kpi-value">
+                        <span id="foodCost">28%</span>
+                        <span class="kpi-trend up">↑ 2%</span>
+                    </div>
+                    <div class="kpi-subtitle">Objectif: < 30%</div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-label">Marge Contribution</div>
+                    <div class="kpi-value">
+                        <span id="contribMargin">48%</span>
+                        <span class="kpi-trend down">↓ 3%</span>
+                    </div>
+                    <div class="kpi-subtitle">vs mois dernier</div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="kpi-label">Panier Moyen</div>
+                    <div class="kpi-value">
+                        <span id="avgOrder">18,500</span>
+                        <span style="font-size: 1rem;">FCFA</span>
+                    </div>
+                    <div class="kpi-subtitle">+12% vs objectif</div>
+                </div>
+                <div class="kpi-card alert">
+                    <div class="kpi-label">Alertes Actives</div>
+                    <div class="kpi-value" id="activeAlerts">3</div>
+                    <div class="kpi-subtitle">2 critiques, 1 warning</div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content-grid">
+                <!-- Products Performance -->
+                <div class="data-section">
+                    <div class="section-header">
+                        <h2 class="section-title">Performance Produits</h2>
+                        <button class="btn btn-sync" onclick="syncData()">
+                            Synchroniser
+                        </button>
+                    </div>
+                    <table class="advanced-table">
+                        <thead>
+                            <tr>
+                                <th>Produit</th>
+                                <th>Catégorie</th>
+                                <th>Prix</th>
+                                <th>Food Cost</th>
+                                <th>Marge</th>
+                                <th>Popularité</th>
+                                <th>Classification</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTable">
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Alerts Panel -->
+                <div>
+                    <div class="alerts-panel">
+                        <h3 style="margin-bottom: 15px; color: #2c3e50;">Alertes Récentes</h3>
+                        <div id="alertsList">
+                            <div class="alert-item critical">
+                                <div class="alert-time">Il y a 2 heures</div>
+                                <div class="alert-message">⚠️ Food cost Thieboudienne > 35% (37%)</div>
+                            </div>
+                            <div class="alert-item warning">
+                                <div class="alert-time">Il y a 5 heures</div>
+                                <div class="alert-message">📉 Baisse demande Yassa -15% vs semaine dernière</div>
+                            </div>
+                            <div class="alert-item info">
+                                <div class="alert-time">Il y a 1 jour</div>
+                                <div class="alert-message">💡 Opportunité: Augmenter prix Bissap (+500 FCFA possible)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3 class="chart-title">Evolution des Marges (30 jours)</h3>
+                    <canvas id="marginChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Mix Produits</h3>
+                    <canvas id="mixChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Analysis Tab -->
+        <div id="pricing-tab" class="tab-content">
+            <div class="data-section">
+                <h2 class="section-title">Analyse Détaillée des Prix</h2>
+                <div style="padding: 20px;">
+                    <h3>Matrice BCG des Produits</h3>
+                    <canvas id="bcgMatrix" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competition Tab -->
+        <div id="competition-tab" class="tab-content">
+            <div class="data-section">
+                <h2 class="section-title">Analyse Concurrentielle</h2>
+                <p style="padding: 20px; color: #7f8c8d;">Module en développement - Connexion API concurrents requise</p>
+            </div>
+        </div>
+
+        <!-- Simulation Tab -->
+        <div id="simulation-tab" class="tab-content">
+            <div class="content-grid">
+                <div class="simulation-panel">
+                    <h2 class="section-title">Simulateur de Prix</h2>
+                    <div class="sim-input-group">
+                        <label>Sélectionner un produit</label>
+                        <select id="simProduct">
+                            <option>Thieboudienne</option>
+                            <option>Yassa Poulet</option>
+                            <option>Mafé</option>
+                            <option>Bissap</option>
+                        </select>
+                    </div>
+                    <div class="sim-input-group">
+                        <label>Ajustement Prix (%)</label>
+                        <input type="range" class="sim-slider" id="priceAdjust"
+                               min="-30" max="30" value="0" oninput="updateSimulation()">
+                        <span id="priceAdjustValue">0%</span>
+                    </div>
+                    <div class="sim-input-group">
+                        <label>Impact Volume Estimé (%)</label>
+                        <input type="range" class="sim-slider" id="volumeImpact"
+                               min="-50" max="50" value="0" oninput="updateSimulation()">
+                        <span id="volumeImpactValue">0%</span>
+                    </div>
+                    <button class="btn btn-primary" onclick="runSimulation()">
+                        Lancer la Simulation
+                    </button>
+                </div>
+                <div class="simulation-panel">
+                    <h2 class="section-title">Résultats Simulation</h2>
+                    <div class="sim-result">
+                        <div class="sim-result-item">
+                            <span class="sim-result-label">Nouveau Prix:</span>
+                            <span class="sim-result-value" id="simNewPrice">-</span>
+                        </div>
+                        <div class="sim-result-item">
+                            <span class="sim-result-label">Impact CA:</span>
+                            <span class="sim-result-value" id="simRevenue">-</span>
+                        </div>
+                        <div class="sim-result-item">
+                            <span class="sim-result-label">Impact Marge:</span>
+                            <span class="sim-result-value" id="simMargin">-</span>
+                        </div>
+                        <div class="sim-result-item">
+                            <span class="sim-result-label">Break-even:</span>
+                            <span class="sim-result-value" id="simBreakeven">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts-tab" class="tab-content">
+            <div class="data-section">
+                <h2 class="section-title">Configuration des Alertes</h2>
+                <div style="padding: 20px;">
+                    <p>Configuration des seuils d'alertes et notifications</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentProducts = [];
+        let charts = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check auth
+            if (!AUTH.isLoggedIn()) {
+                window.location.href = 'login-simple.html';
+                return;
+            }
+
+            // Display user
+            const user = AUTH.getCurrentUser();
+            if (user) {
+                document.getElementById('userName').textContent = user.username;
+            }
+
+            // Load data and initialize
+            await loadData();
+            initCharts();
+            startRealTimeUpdates();
+        });
+
+        // Load data
+        async function loadData() {
+            try {
+                const products = await SHEETS.loadData();
+                currentProducts = enhanceProductData(products);
+                displayProducts();
+                updateKPIs();
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        // Enhance product data with analytics
+        function enhanceProductData(products) {
+            return products.map(product => {
+                // Calculate food cost percentage
+                const foodCost = ((product.cost / product.price) * 100).toFixed(1);
+
+                // Random popularity for demo (would come from real data)
+                const popularity = Math.floor(Math.random() * 100) + 1;
+
+                // BCG Matrix classification
+                let classification = 'puzzle';
+                if (product.margin >= 40 && popularity >= 60) {
+                    classification = 'star';
+                } else if (product.margin >= 40 && popularity < 60) {
+                    classification = 'puzzle';
+                } else if (product.margin < 40 && popularity >= 60) {
+                    classification = 'plow';
+                } else {
+                    classification = 'dog';
+                }
+
+                return {
+                    ...product,
+                    foodCost,
+                    popularity,
+                    classification
+                };
+            });
+        }
+
+        // Display products
+        function displayProducts() {
+            const tbody = document.getElementById('productsTable');
+            if (!tbody) return;
+
+            tbody.innerHTML = currentProducts.map(product => {
+                const badgeClass = product.classification;
+                const badgeText = {
+                    star: 'STAR ⭐',
+                    puzzle: 'PUZZLE 🧩',
+                    plow: 'PLOW HORSE 🐴',
+                    dog: 'DOG 🔻'
+                }[badgeClass];
+
+                const marginClass = product.margin >= 40 ? 'success' :
+                                   product.margin >= 30 ? 'warning' : 'alert';
+
+                return `
+                    <tr>
+                        <td><strong>${product.name}</strong></td>
+                        <td>${product.category}</td>
+                        <td>${formatPrice(product.price)}</td>
+                        <td>${product.foodCost}%</td>
+                        <td><span style="color: ${getMarginColor(product.margin)}">${product.margin}%</span></td>
+                        <td>${product.popularity}/100</td>
+                        <td><span class="performance-badge ${badgeClass}">${badgeText}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update KPIs
+        function updateKPIs() {
+            if (!currentProducts.length) return;
+
+            // Calculate average food cost
+            const avgFoodCost = currentProducts.reduce((sum, p) =>
+                sum + parseFloat(p.foodCost), 0) / currentProducts.length;
+            document.getElementById('foodCost').textContent = avgFoodCost.toFixed(1) + '%';
+
+            // Update other KPIs (using existing margin calculation)
+            const avgMargin = currentProducts.reduce((sum, p) =>
+                sum + parseFloat(p.margin), 0) / currentProducts.length;
+            document.getElementById('contribMargin').textContent = avgMargin.toFixed(0) + '%';
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Margin evolution chart
+            const marginCtx = document.getElementById('marginChart');
+            if (marginCtx) {
+                charts.margin = new Chart(marginCtx, {
+                    type: 'line',
+                    data: {
+                        labels: generateDateLabels(7),
+                        datasets: [{
+                            label: 'Marge Moyenne',
+                            data: generateRandomData(7, 35, 55),
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        }
+                    }
+                });
+            }
+
+            // Product mix chart
+            const mixCtx = document.getElementById('mixChart');
+            if (mixCtx && currentProducts.length) {
+                charts.mix = new Chart(mixCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: currentProducts.map(p => p.name),
+                        datasets: [{
+                            data: currentProducts.map(p => p.price),
+                            backgroundColor: [
+                                '#3498db',
+                                '#2ecc71',
+                                '#f39c12',
+                                '#e74c3c',
+                                '#9b59b6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update nav
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Simulation functions
+        function updateSimulation() {
+            const priceAdjust = document.getElementById('priceAdjust').value;
+            const volumeImpact = document.getElementById('volumeImpact').value;
+
+            document.getElementById('priceAdjustValue').textContent = priceAdjust + '%';
+            document.getElementById('volumeImpactValue').textContent = volumeImpact + '%';
+        }
+
+        function runSimulation() {
+            const product = document.getElementById('simProduct').value;
+            const priceAdjust = parseFloat(document.getElementById('priceAdjust').value);
+            const volumeImpact = parseFloat(document.getElementById('volumeImpact').value);
+
+            // Find product data
+            const productData = currentProducts.find(p => p.name === product);
+            if (!productData) return;
+
+            // Calculate simulation
+            const newPrice = productData.price * (1 + priceAdjust/100);
+            const newVolume = 100 * (1 + volumeImpact/100);
+            const revenue = (newPrice * newVolume) / 100;
+            const newMargin = ((newPrice - productData.cost) / newPrice * 100);
+
+            // Display results
+            document.getElementById('simNewPrice').textContent = formatPrice(newPrice);
+            document.getElementById('simRevenue').textContent = (priceAdjust + volumeImpact > 0 ? '+' : '') +
+                                                                (priceAdjust + volumeImpact).toFixed(0) + '%';
+            document.getElementById('simMargin').textContent = newMargin.toFixed(1) + '%';
+            document.getElementById('simBreakeven').textContent = Math.ceil(productData.cost / newPrice * 100) + ' unités';
+        }
+
+        // Sync data
+        async function syncData() {
+            await loadData();
+            alert('Données synchronisées');
+        }
+
+        // Real-time updates simulation
+        function startRealTimeUpdates() {
+            setInterval(() => {
+                // Update random KPIs for demo
+                const alerts = Math.floor(Math.random() * 5);
+                document.getElementById('activeAlerts').textContent = alerts;
+            }, 30000);
+        }
+
+        // Helper functions
+        function formatPrice(price) {
+            return new Intl.NumberFormat('fr-FR').format(price || 0) + ' FCFA';
+        }
+
+        function getMarginColor(margin) {
+            if (margin >= 50) return '#27ae60';
+            if (margin >= 40) return '#3498db';
+            if (margin >= 30) return '#f39c12';
+            return '#e74c3c';
+        }
+
+        function generateDateLabels(days) {
+            const labels = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                labels.push(date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }));
+            }
+            return labels;
+        }
+
+        function generateRandomData(count, min, max) {
+            return Array.from({length: count}, () =>
+                Math.floor(Math.random() * (max - min + 1)) + min
+            );
+        }
+
+        function logout() {
+            AUTH.logout();
+        }
+    </script>
+</body>
+</html>

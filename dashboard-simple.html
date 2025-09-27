@@ -216,6 +216,9 @@
             <h1>📊 Dashboard Pricing & Marges</h1>
             <div class="user-info">
                 <span class="user-name" id="userName">Utilisateur</span>
+                <button id="btnAdvanced" class="btn-logout" style="background: #3498db; margin-right: 10px; display: none;" onclick="goToAdvanced()">
+                    Version Avancée →
+                </button>
                 <button class="btn-logout" onclick="logout()">Déconnexion</button>
             </div>
         </div>
@@ -277,9 +280,10 @@
             if (user) {
                 document.getElementById('userName').textContent = user.username;
 
-                // Show sync button for admin
+                // Show sync button and advanced dashboard for admin
                 if (AUTH.hasGoogleSheetsAccess()) {
                     document.getElementById('btnSync').style.display = 'inline-block';
+                    document.getElementById('btnAdvanced').style.display = 'inline-block';
                 }
             }
 
@@ -422,6 +426,11 @@
         // Logout
         function logout() {
             AUTH.logout();
+        }
+
+        // Go to advanced dashboard
+        function goToAdvanced() {
+            window.location.href = 'dashboard-advanced.html';
         }
     </script>
 </body>

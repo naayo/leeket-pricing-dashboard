@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leeket - Configuration & Paramètres</title>
+    <script src="auth-simple.js"></script>
+    <script src="analytics-module.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .btn-back {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .config-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .config-title {
+            font-size: 1.2rem;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .config-group {
+            margin-bottom: 20px;
+        }
+
+        .config-label {
+            display: block;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .config-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .config-input-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .threshold-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .threshold-item {
+            text-align: center;
+        }
+
+        .threshold-label {
+            font-size: 0.75rem;
+            color: #95a5a6;
+            margin-bottom: 5px;
+        }
+
+        .threshold-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .threshold-input.excellent {
+            border-color: #27ae60;
+            background: #f0fff4;
+        }
+
+        .threshold-input.good {
+            border-color: #3498db;
+            background: #f0f8ff;
+        }
+
+        .threshold-input.warning {
+            border-color: #f39c12;
+            background: #fffbf0;
+        }
+
+        .threshold-input.critical {
+            border-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .btn-save {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-save:hover {
+            background: #229954;
+        }
+
+        .alert-config {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #27ae60;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .notification-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .notification-label {
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚙️ Configuration & Paramètres</h1>
+            <button class="btn-back" onclick="goBack()">
+                ← Retour au Dashboard
+            </button>
+        </div>
+
+        <div class="success-message" id="successMessage">
+            ✅ Configuration sauvegardée avec succès !
+        </div>
+
+        <!-- Configuration Grid -->
+        <div class="config-grid">
+            <!-- Seuils Food Cost -->
+            <div class="config-card">
+                <h2 class="config-title">📊 Seuils Food Cost</h2>
+                <div class="config-group">
+                    <label class="config-label">Définir les seuils d'alerte (%)</label>
+                    <div class="threshold-grid">
+                        <div class="threshold-item">
+                            <div class="threshold-label">Excellent</div>
+                            <input type="number" class="threshold-input excellent"
+                                   id="fc-excellent" value="25" min="0" max="100">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">Bon</div>
+                            <input type="number" class="threshold-input good"
+                                   id="fc-good" value="30" min="0" max="100">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">Attention</div>
+                            <input type="number" class="threshold-input warning"
+                                   id="fc-warning" value="35" min="0" max="100">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">Critique</div>
+                            <input type="number" class="threshold-input critical"
+                                   id="fc-critical" value="40" min="0" max="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seuils Marges -->
+            <div class="config-card">
+                <h2 class="config-title">💰 Seuils de Marge</h2>
+                <div class="config-group">
+                    <label class="config-label">Définir les objectifs de marge (%)</label>
+                    <div class="threshold-grid">
+                        <div class="threshold-item">
+                            <div class="threshold-label">Excellent</div>
+                            <input type="number" class="threshold-input excellent"
+                                   id="margin-excellent" value="50" min="0" max="100">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">Bon</div>
+                            <input type="number" class="threshold-input good"
+                                   id="margin-good" value="40" min="0" max="100">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">Attention</div>
+                            <input type="number" class="threshold-input warning"
+                                   id="margin-warning" value="30" min="0" max="100">
+                        </div>
+                        <div class="threshold-item">
+                            <div class="threshold-label">Critique</div>
+                            <input type="number" class="threshold-input critical"
+                                   id="margin-critical" value="25" min="0" max="100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paramètres d'élasticité -->
+            <div class="config-card">
+                <h2 class="config-title">📈 Élasticité Prix</h2>
+                <div class="config-group">
+                    <label class="config-label">Sensibilité au prix par segment</label>
+                    <div style="margin-top: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: #7f8c8d;">
+                                Premium (plats haut de gamme)
+                            </label>
+                            <input type="number" class="config-input"
+                                   id="elasticity-premium" value="-0.8" step="0.1" min="-3" max="0">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: #7f8c8d;">
+                                Standard (plats classiques)
+                            </label>
+                            <input type="number" class="config-input"
+                                   id="elasticity-standard" value="-1.2" step="0.1" min="-3" max="0">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 0.85rem; color: #7f8c8d;">
+                                Budget (plats économiques)
+                            </label>
+                            <input type="number" class="config-input"
+                                   id="elasticity-budget" value="-1.8" step="0.1" min="-3" max="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="config-card">
+                <h2 class="config-title">🔔 Notifications & Alertes</h2>
+                <div class="config-group">
+                    <div class="notification-item">
+                        <span class="notification-label">Alertes Food Cost élevé</span>
+                        <label class="switch">
+                            <input type="checkbox" id="alert-foodcost" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-item">
+                        <span class="notification-label">Alertes Marge faible</span>
+                        <label class="switch">
+                            <input type="checkbox" id="alert-margin" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-item">
+                        <span class="notification-label">Opportunités de prix</span>
+                        <label class="switch">
+                            <input type="checkbox" id="alert-opportunity" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="notification-item">
+                        <span class="notification-label">Alertes concurrence</span>
+                        <label class="switch">
+                            <input type="checkbox" id="alert-competition">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Objectifs Business -->
+            <div class="config-card">
+                <h2 class="config-title">🎯 Objectifs Business</h2>
+                <div class="config-group">
+                    <label class="config-label">Panier Moyen Cible (FCFA)</label>
+                    <input type="number" class="config-input"
+                           id="target-aov" value="20000" step="1000">
+                </div>
+                <div class="config-group">
+                    <label class="config-label">Marge Brute Cible (%)</label>
+                    <input type="number" class="config-input"
+                           id="target-margin" value="45" min="0" max="100">
+                </div>
+                <div class="config-group">
+                    <label class="config-label">Taux de Gaspillage Max (%)</label>
+                    <input type="number" class="config-input"
+                           id="target-waste" value="5" min="0" max="20">
+                </div>
+            </div>
+
+            <!-- Intégrations -->
+            <div class="config-card">
+                <h2 class="config-title">🔗 Intégrations</h2>
+                <div class="config-group">
+                    <label class="config-label">Google Sheets ID</label>
+                    <input type="text" class="config-input"
+                           id="sheets-id" value="1Mdss7oPMA-FuXsNVAtJBTeF15UQLZNy6">
+                </div>
+                <div class="config-group">
+                    <label class="config-label">Nom de l'onglet</label>
+                    <input type="text" class="config-input"
+                           id="sheets-name" value="prix">
+                </div>
+                <div class="config-group">
+                    <label class="config-label">Fréquence de synchronisation</label>
+                    <select class="config-input" id="sync-frequency">
+                        <option value="manual">Manuel uniquement</option>
+                        <option value="5">Toutes les 5 minutes</option>
+                        <option value="15">Toutes les 15 minutes</option>
+                        <option value="30">Toutes les 30 minutes</option>
+                        <option value="60">Toutes les heures</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Save Button -->
+        <div style="margin-top: 30px; text-align: center;">
+            <button class="btn-save" onclick="saveConfiguration()" style="max-width: 400px;">
+                💾 Sauvegarder la Configuration
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!AUTH.isLoggedIn()) {
+                window.location.href = 'login-simple.html';
+                return;
+            }
+
+            const user = AUTH.getCurrentUser();
+            if (!user || user.role !== 'admin') {
+                alert('Accès réservé aux administrateurs');
+                window.location.href = 'dashboard-simple.html';
+                return;
+            }
+
+            // Load saved configuration
+            loadConfiguration();
+        });
+
+        // Load configuration from localStorage
+        function loadConfiguration() {
+            const config = localStorage.getItem('leeketConfig');
+            if (config) {
+                const data = JSON.parse(config);
+
+                // Load thresholds
+                if (data.thresholds) {
+                    // Food Cost
+                    if (data.thresholds.foodCost) {
+                        document.getElementById('fc-excellent').value = data.thresholds.foodCost.excellent || 25;
+                        document.getElementById('fc-good').value = data.thresholds.foodCost.good || 30;
+                        document.getElementById('fc-warning').value = data.thresholds.foodCost.warning || 35;
+                        document.getElementById('fc-critical').value = data.thresholds.foodCost.critical || 40;
+                    }
+
+                    // Margins
+                    if (data.thresholds.margin) {
+                        document.getElementById('margin-excellent').value = data.thresholds.margin.excellent || 50;
+                        document.getElementById('margin-good').value = data.thresholds.margin.good || 40;
+                        document.getElementById('margin-warning').value = data.thresholds.margin.warning || 30;
+                        document.getElementById('margin-critical').value = data.thresholds.margin.critical || 25;
+                    }
+                }
+
+                // Load elasticity
+                if (data.elasticity) {
+                    document.getElementById('elasticity-premium').value = data.elasticity.premium || -0.8;
+                    document.getElementById('elasticity-standard').value = data.elasticity.standard || -1.2;
+                    document.getElementById('elasticity-budget').value = data.elasticity.budget || -1.8;
+                }
+
+                // Load notifications
+                if (data.notifications) {
+                    document.getElementById('alert-foodcost').checked = data.notifications.foodCost !== false;
+                    document.getElementById('alert-margin').checked = data.notifications.margin !== false;
+                    document.getElementById('alert-opportunity').checked = data.notifications.opportunity !== false;
+                    document.getElementById('alert-competition').checked = data.notifications.competition || false;
+                }
+
+                // Load objectives
+                if (data.objectives) {
+                    document.getElementById('target-aov').value = data.objectives.aov || 20000;
+                    document.getElementById('target-margin').value = data.objectives.margin || 45;
+                    document.getElementById('target-waste').value = data.objectives.waste || 5;
+                }
+
+                // Load integrations
+                if (data.integrations) {
+                    document.getElementById('sheets-id').value = data.integrations.sheetsId || '1Mdss7oPMA-FuXsNVAtJBTeF15UQLZNy6';
+                    document.getElementById('sheets-name').value = data.integrations.sheetsName || 'prix';
+                    document.getElementById('sync-frequency').value = data.integrations.syncFrequency || 'manual';
+                }
+            }
+        }
+
+        // Save configuration
+        function saveConfiguration() {
+            const config = {
+                thresholds: {
+                    foodCost: {
+                        excellent: parseFloat(document.getElementById('fc-excellent').value),
+                        good: parseFloat(document.getElementById('fc-good').value),
+                        warning: parseFloat(document.getElementById('fc-warning').value),
+                        critical: parseFloat(document.getElementById('fc-critical').value)
+                    },
+                    margin: {
+                        excellent: parseFloat(document.getElementById('margin-excellent').value),
+                        good: parseFloat(document.getElementById('margin-good').value),
+                        warning: parseFloat(document.getElementById('margin-warning').value),
+                        critical: parseFloat(document.getElementById('margin-critical').value)
+                    }
+                },
+                elasticity: {
+                    premium: parseFloat(document.getElementById('elasticity-premium').value),
+                    standard: parseFloat(document.getElementById('elasticity-standard').value),
+                    budget: parseFloat(document.getElementById('elasticity-budget').value)
+                },
+                notifications: {
+                    foodCost: document.getElementById('alert-foodcost').checked,
+                    margin: document.getElementById('alert-margin').checked,
+                    opportunity: document.getElementById('alert-opportunity').checked,
+                    competition: document.getElementById('alert-competition').checked
+                },
+                objectives: {
+                    aov: parseInt(document.getElementById('target-aov').value),
+                    margin: parseFloat(document.getElementById('target-margin').value),
+                    waste: parseFloat(document.getElementById('target-waste').value)
+                },
+                integrations: {
+                    sheetsId: document.getElementById('sheets-id').value,
+                    sheetsName: document.getElementById('sheets-name').value,
+                    syncFrequency: document.getElementById('sync-frequency').value
+                },
+                lastUpdated: new Date().toISOString()
+            };
+
+            // Save to localStorage
+            localStorage.setItem('leeketConfig', JSON.stringify(config));
+
+            // Update analytics module config
+            if (window.LeeketAnalytics) {
+                LeeketAnalytics.config.thresholds = config.thresholds;
+                LeeketAnalytics.config.elasticity = config.elasticity;
+            }
+
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
+        }
+
+        // Go back to dashboard
+        function goBack() {
+            window.location.href = AUTH.hasGoogleSheetsAccess() ?
+                'dashboard-advanced.html' : 'dashboard-simple.html';
+        }
+    </script>
+</body>
+</html>
