@@ -12,12 +12,14 @@
     
     <title>Leeket - Dashboard Pricing & Marges | Optimisation Tarifaire</title>
     
-    <!-- Chart.js -->
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
-    <!-- SheetJS pour lire les fichiers Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Font Awesome pour les icônes -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Application Scripts -->
+    <script src="auth.js"></script>
+    <script src="sheets-config.js"></script>
     
     <style>
         * {
@@ -895,32 +897,42 @@
         // ==================== INITIALISATION ====================
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Vérifier l'authentification (DOIT être fait en premier)
-            if (!checkAuthentication()) {
-                return; // Stop si non authentifié
+            // Check authentication first
+            if (!requireAuth()) {
+                return; // Redirect if not authenticated
             }
 
+            // Get current user
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Display user info
+            const userInfo = document.getElementById('userInfo');
+            if (userInfo) {
+                userInfo.innerHTML = '<i class="fas fa-user-circle"></i> ' + user.username;
+            }
+
+            // Initialize app
             initializeApp();
             setupEventListeners();
             initializeCharts();
 
-            // Attendre que le DOM soit complètement chargé avant d'appliquer les restrictions
-            setTimeout(function() {
-                // Appliquer les restrictions de rôle
-                applyRoleRestrictions();
+            // Apply role restrictions
+            applyUserRestrictions(user);
 
-                // Vérifier si Google Sheets est configuré
-                checkGoogleSheetsConfig();
+            // Check Google Sheets configuration
+            if (hasGoogleSheetsAccess()) {
+                checkGoogleSheetsSetup();
+            }
 
-                // Ajouter l'écouteur pour le bouton de déconnexion
-                const logoutBtn = document.getElementById('logoutBtn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        logout();
-                    });
-                }
-            }, 100);
+            // Setup logout button - it's already defined in auth.js
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.onclick = logout; // Use the logout function from auth.js
+            }
         });
 
         function checkAuthentication() {
@@ -953,7 +965,53 @@
             }
         }
 
-        function applyRoleRestrictions() {
+        function applyUserRestrictions(user) {
+            console.log('Applying restrictions for:', user.username, 'Role:', user.role);
+
+            const hasAccess = hasGoogleSheetsAccess();
+            console.log('Google Sheets access:', hasAccess);
+
+            // Get elements
+            const googleSheetsSetup = document.getElementById('googleSheetsSetup');
+            const googleSheetsStatus = document.getElementById('googleSheetsStatus');
+            const uploadSeparator = document.getElementById('uploadSeparator');
+
+            if (hasAccess) {
+                // Show Google Sheets for authorized users
+                if (googleSheetsSetup) googleSheetsSetup.style.display = 'block';
+                if (uploadSeparator) uploadSeparator.style.display = 'block';
+            } else {
+                // Hide for unauthorized users
+                if (googleSheetsSetup) googleSheetsSetup.style.display = 'none';
+                if (googleSheetsStatus) googleSheetsStatus.style.display = 'none';
+                if (uploadSeparator) uploadSeparator.style.display = 'none';
+
+                // Update section title
+                const sectionTitle = document.querySelector('.upload-section h2');
+                if (sectionTitle) {
+                    sectionTitle.innerHTML = '<i class="fas fa-file-excel"></i> Importer vos données de prix';
+                }
+            }
+
+            // Add admin button for admin users
+            if (user.username === 'baila' && user.role === 'admin') {
+                setTimeout(function() {
+                    const adminContainer = document.getElementById('adminButtonContainer');
+                    if (adminContainer && !document.getElementById('adminButton')) {
+                        const adminBtn = document.createElement('button');
+                        adminBtn.id = 'adminButton';
+                        adminBtn.onclick = function() {
+                            window.location.href = 'admin-panel.html';
+                        };
+                        adminBtn.style.cssText = 'background: #FFD700; color: #333; border: 1px solid #FFC700; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px; font-weight: bold;';
+                        adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin Panel';
+                        adminContainer.appendChild(adminBtn);
+                    }
+                }, 100);
+            }
+        }
+
+        function applyRoleRestrictions() { // Keep for backward compatibility
             console.log('Application des restrictions pour:', window.currentUsername, 'Rôle:', window.currentUserRole);
 
             // Vérifier les permissions
@@ -1063,7 +1121,35 @@
 
         let autoSyncInterval = null;
 
-        function checkGoogleSheetsConfig() {
+        function checkGoogleSheetsSetup() {
+            if (!hasGoogleSheetsAccess()) {
+                loadDefaultData();
+                return;
+            }
+
+            const googleSheetsSetup = document.getElementById('googleSheetsSetup');
+            const googleSheetsStatus = document.getElementById('googleSheetsStatus');
+
+            if (isSheetConfigured()) {
+                // Sheet is configured, show status and hide setup
+                if (googleSheetsSetup) googleSheetsSetup.style.display = 'none';
+                if (googleSheetsStatus) googleSheetsStatus.style.display = 'block';
+
+                // Start syncing
+                syncGoogleSheets();
+
+                // Set up auto-sync
+                if (autoSyncInterval) clearInterval(autoSyncInterval);
+                autoSyncInterval = setInterval(syncGoogleSheets, SHEETS_CONFIG.SYNC_INTERVAL);
+            } else {
+                // No configuration, show setup
+                if (googleSheetsSetup) googleSheetsSetup.style.display = 'block';
+                if (googleSheetsStatus) googleSheetsStatus.style.display = 'none';
+                loadDefaultData();
+            }
+        }
+
+        function checkGoogleSheetsConfig() { // Keep for compatibility
             // Vérifier si l'utilisateur a les permissions pour Google Sheets
             let hasGoogleSheetsAccess = false;
 
