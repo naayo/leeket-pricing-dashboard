@@ -603,6 +603,7 @@
             <span class="version-badge">v1.0.0</span>
             <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
                 <span id="userInfo" style="color: white; opacity: 0.9; margin-right: 15px;"></span>
+                <span id="adminButtonContainer"></span>
                 <button id="logoutBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
                     <i class="fas fa-sign-out-alt"></i> Déconnexion
                 </button>
@@ -955,21 +956,25 @@
         function applyRoleRestrictions() {
             console.log('Application des restrictions pour:', window.currentUsername, 'Rôle:', window.currentUserRole);
 
-            // Vérifier les permissions sauvegardées
-            const savedPermissions = localStorage.getItem('leeketUserPermissions');
+            // Vérifier les permissions
             let hasGoogleSheetsAccess = false;
 
-            // Par défaut, seul baila a accès
+            // Baila a TOUJOURS accès
             if (window.currentUsername === 'baila') {
                 hasGoogleSheetsAccess = true;
-            } else if (savedPermissions) {
-                try {
-                    const permissions = JSON.parse(savedPermissions);
-                    if (permissions[window.currentUsername]) {
-                        hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess === true;
+                console.log('Baila détecté - accès Google Sheets activé');
+            } else {
+                // Pour les autres, vérifier les permissions sauvegardées
+                const savedPermissions = localStorage.getItem('leeketUserPermissions');
+                if (savedPermissions) {
+                    try {
+                        const permissions = JSON.parse(savedPermissions);
+                        if (permissions[window.currentUsername]) {
+                            hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess === true;
+                        }
+                    } catch(e) {
+                        console.error('Erreur parsing permissions:', e);
                     }
-                } catch(e) {
-                    console.error('Erreur parsing permissions:', e);
                 }
             }
 
@@ -1011,10 +1016,11 @@
             }
 
             // Ajouter le bouton admin pour baila
-            if (window.currentUsername === 'baila' && window.currentUserRole === 'admin') {
+            if (window.currentUsername === 'baila') {
+                console.log('Ajout du bouton admin pour baila');
                 setTimeout(function() {
-                    const logoutBtn = document.getElementById('logoutBtn');
-                    if (logoutBtn && !document.getElementById('adminButton')) {
+                    const adminContainer = document.getElementById('adminButtonContainer');
+                    if (adminContainer && !document.getElementById('adminButton')) {
                         const adminBtn = document.createElement('button');
                         adminBtn.id = 'adminButton';
                         adminBtn.onclick = function() {
@@ -1023,11 +1029,10 @@
                         adminBtn.style.cssText = 'background: #FFD700; color: #333; border: 1px solid #FFC700; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px; font-weight: bold;';
                         adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin Panel';
 
-                        // Insérer avant le bouton de déconnexion
-                        logoutBtn.parentNode.insertBefore(adminBtn, logoutBtn);
-                        console.log('Bouton admin ajouté pour baila');
+                        adminContainer.appendChild(adminBtn);
+                        console.log('Bouton admin ajouté avec succès');
                     }
-                }, 200);
+                }, 300);
             }
         }
 
