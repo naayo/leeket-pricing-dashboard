@@ -11,7 +11,8 @@
       "Bash(open test-sheets.html)",
       "Bash(python3:*)",
       "Bash(open http://localhost:8000/test-sheets.html)",
-      "Bash(open http://localhost:8000/leeket-pricing-dashboard.html)"
+      "Bash(open http://localhost:8000/leeket-pricing-dashboard.html)",
+      "Bash(open http://localhost:8000/login-simple.html)"
     ],
     "deny": [],
     "ask": []
