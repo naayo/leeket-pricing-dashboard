@@ -1129,15 +1129,30 @@
         let autoSyncInterval = null;
 
         function checkGoogleSheetsSetup() {
+            console.log('checkGoogleSheetsSetup called');
+            console.log('Has Google Sheets access:', hasGoogleSheetsAccess());
+            console.log('Sheet configured:', isSheetConfigured());
+            console.log('Sheet ID:', SHEETS_CONFIG.SHEET_ID);
+            console.log('Sheet Name:', SHEETS_CONFIG.SHEET_NAME);
+
             if (!hasGoogleSheetsAccess()) {
+                console.log('No Google Sheets access, loading default data');
                 loadDefaultData();
                 return;
             }
 
             const googleSheetsSetup = document.getElementById('googleSheetsSetup');
             const googleSheetsStatus = document.getElementById('googleSheetsStatus');
+            const uploadArea = document.getElementById('uploadArea');
+
+            // Always hide upload area for users with Google Sheets access
+            if (uploadArea) {
+                uploadArea.style.display = 'none';
+                console.log('Upload area hidden for Google Sheets user');
+            }
 
             if (isSheetConfigured()) {
+                console.log('Sheet is configured, starting sync...');
                 // Sheet is configured, show status and hide setup
                 if (googleSheetsSetup) googleSheetsSetup.style.display = 'none';
                 if (googleSheetsStatus) googleSheetsStatus.style.display = 'block';
@@ -1145,10 +1160,11 @@
                 // Start syncing
                 syncGoogleSheets();
 
-                // Set up auto-sync
-                if (autoSyncInterval) clearInterval(autoSyncInterval);
-                autoSyncInterval = setInterval(syncGoogleSheets, SHEETS_CONFIG.SYNC_INTERVAL);
+                // Disable auto-sync to prevent issues
+                // if (autoSyncInterval) clearInterval(autoSyncInterval);
+                // autoSyncInterval = setInterval(syncGoogleSheets, SHEETS_CONFIG.SYNC_INTERVAL);
             } else {
+                console.log('Sheet not configured, showing setup');
                 // No configuration, show setup
                 if (googleSheetsSetup) googleSheetsSetup.style.display = 'block';
                 if (googleSheetsStatus) googleSheetsStatus.style.display = 'none';
@@ -1217,12 +1233,17 @@
         }
 
         function syncGoogleSheets() {
+            console.log('syncGoogleSheets called');
+            console.log('Sheet configured check:', isSheetConfigured());
+
             // Check if Google Sheets is configured
             if (!isSheetConfigured()) {
+                console.log('Sheet not configured in sync, loading default data');
                 loadDefaultData();
                 return;
             }
 
+            console.log('Starting Google Sheets data fetch...');
             const loader = document.getElementById('loader');
             const uploadArea = document.getElementById('uploadArea');
 
@@ -1238,8 +1259,12 @@
             }
 
             // Use the data-fetcher to load data from Google Sheets
+            console.log('Calling leeketDataFetcher.loadData()...');
             leeketDataFetcher.loadData()
                 .then(processedData => {
+                    console.log('Received processed data:', processedData);
+                    console.log('Number of products:', processedData?.products?.length || 0);
+
                     // Convert processed data to the format expected by the dashboard
                     const products = processedData.products.map(product => ({
                         name: product.name,
