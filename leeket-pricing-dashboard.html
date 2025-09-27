@@ -924,9 +924,12 @@
             // Apply role restrictions
             applyUserRestrictions(user);
 
-            // Check Google Sheets configuration
+            // Check Google Sheets configuration and load data
             if (hasGoogleSheetsAccess()) {
                 checkGoogleSheetsSetup();
+            } else {
+                // Load default data for users without Google Sheets access
+                loadDefaultData();
             }
 
             // Setup logout button - it's already defined in auth.js
@@ -976,16 +979,19 @@
             const googleSheetsSetup = document.getElementById('googleSheetsSetup');
             const googleSheetsStatus = document.getElementById('googleSheetsStatus');
             const uploadSeparator = document.getElementById('uploadSeparator');
+            const uploadArea = document.getElementById('uploadArea');
 
             if (hasAccess) {
-                // Show Google Sheets for authorized users
+                // Show Google Sheets for authorized users, hide file upload
                 if (googleSheetsSetup) googleSheetsSetup.style.display = 'block';
-                if (uploadSeparator) uploadSeparator.style.display = 'block';
+                if (uploadSeparator) uploadSeparator.style.display = 'none'; // Hide separator
+                if (uploadArea) uploadArea.style.display = 'none'; // Hide file upload
             } else {
-                // Hide for unauthorized users
+                // Hide Google Sheets for unauthorized users, show file upload
                 if (googleSheetsSetup) googleSheetsSetup.style.display = 'none';
                 if (googleSheetsStatus) googleSheetsStatus.style.display = 'none';
                 if (uploadSeparator) uploadSeparator.style.display = 'none';
+                if (uploadArea) uploadArea.style.display = 'block'; // Show file upload
 
                 // Update section title
                 const sectionTitle = document.querySelector('.upload-section h2');

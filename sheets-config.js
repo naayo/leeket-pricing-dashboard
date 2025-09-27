@@ -185,7 +185,10 @@ function parseCSV(csvText) {
 
 // Check if Google Sheets is configured
 function isSheetConfigured() {
-	return loadSheetConfig() && SHEETS_CONFIG.SHEET_ID;
+	// First try to load any saved config
+	loadSheetConfig();
+	// Return true if we have a Sheet ID (either hardcoded or from localStorage)
+	return SHEETS_CONFIG.SHEET_ID && SHEETS_CONFIG.SHEET_ID.length > 0;
 }
 
 // Initialize on load
