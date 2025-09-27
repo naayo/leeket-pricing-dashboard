@@ -1127,6 +1127,7 @@
         // ==================== GOOGLE SHEETS INTEGRATION ====================
 
         let autoSyncInterval = null;
+        let hasLoadedData = false; // Flag to prevent multiple loads
 
         function checkGoogleSheetsSetup() {
             console.log('checkGoogleSheetsSetup called');
@@ -1157,11 +1158,18 @@
                 if (googleSheetsSetup) googleSheetsSetup.style.display = 'none';
                 if (googleSheetsStatus) googleSheetsStatus.style.display = 'block';
 
-                // Start syncing
-                syncGoogleSheets();
+                // Start syncing ONLY ONCE
+                // Delay the initial sync to avoid conflicts
+                setTimeout(() => {
+                    syncGoogleSheets();
+                }, 1000);
 
-                // Disable auto-sync to prevent issues
-                // if (autoSyncInterval) clearInterval(autoSyncInterval);
+                // COMPLETELY DISABLE auto-sync to prevent refresh loop
+                if (autoSyncInterval) {
+                    clearInterval(autoSyncInterval);
+                    autoSyncInterval = null;
+                }
+                // NEVER set up auto-sync - this causes the refresh problem
                 // autoSyncInterval = setInterval(syncGoogleSheets, SHEETS_CONFIG.SYNC_INTERVAL);
             } else {
                 console.log('Sheet not configured, showing setup');
@@ -1234,12 +1242,22 @@
 
         function syncGoogleSheets() {
             console.log('syncGoogleSheets called');
+
+            // PREVENT MULTIPLE CALLS
+            if (hasLoadedData) {
+                console.log('Data already loaded, skipping sync to prevent loop');
+                return;
+            }
+
             console.log('Sheet configured check:', isSheetConfigured());
 
             // Check if Google Sheets is configured
             if (!isSheetConfigured()) {
                 console.log('Sheet not configured in sync, loading default data');
-                loadDefaultData();
+                if (!hasLoadedData) {
+                    loadDefaultData();
+                    hasLoadedData = true;
+                }
                 return;
             }
 
@@ -1279,6 +1297,7 @@
                     appState.products = products;
                     updateDashboard(products);
                     updateLastSyncTime();
+                    hasLoadedData = true; // Mark as loaded to prevent loops
                     showNotification('success', 'Synchronisation réussie', `${products.length} produits mis à jour depuis Google Sheets`);
                 })
                 .catch(error => {
