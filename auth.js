@@ -188,7 +188,10 @@ function isAdmin() {
 // Require authentication for protected pages
 function requireAuth() {
     if (!isAuthenticated()) {
-        window.location.href = 'index.html';
+        // Check if we're not already on the login page to avoid loops
+        if (!window.location.href.includes('index.html')) {
+            window.location.href = 'index.html';
+        }
         return false;
     }
     return true;

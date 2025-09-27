@@ -924,13 +924,18 @@
             // Apply role restrictions
             applyUserRestrictions(user);
 
-            // Check Google Sheets configuration and load data
-            if (hasGoogleSheetsAccess()) {
-                checkGoogleSheetsSetup();
-            } else {
-                // Load default data for users without Google Sheets access
-                loadDefaultData();
-            }
+            // TEMPORARILY DISABLED to stop refresh loop
+            console.log('Google Sheets check DISABLED to prevent loops');
+
+            // Just load default data for now to make the app stable
+            loadDefaultData();
+
+            // Original code commented out:
+            // if (hasGoogleSheetsAccess()) {
+            //     checkGoogleSheetsSetup();
+            // } else {
+            //     loadDefaultData();
+            // }
 
             // Setup logout button - it's already defined in auth.js
             const logoutBtn = document.getElementById('logoutBtn');
