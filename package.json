@@ -1,0 +1,24 @@
+{
+  "name": "leeket-pricing-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard de Pricing et Marges pour Leeket",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "build": "echo 'No build required for static site'"
+  },
+  "keywords": [
+    "dashboard",
+    "pricing",
+    "leeket",
+    "senegal",
+    "food-delivery"
+  ],
+  "author": "Leeket",
+  "license": "Private",
+  "private": true,
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ]
+}

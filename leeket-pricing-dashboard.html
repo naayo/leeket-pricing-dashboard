@@ -1,0 +1,1912 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Leeket - Outil d'optimisation de prix et marges pour votre business de livraison de plats sénégalais">
+    <meta name="keywords" content="Leeket, pricing, optimisation, marges, Sénégal, restauration, livraison">
+    <meta name="author" content="Leeket">
+    <meta property="og:title" content="Leeket - Dashboard Pricing & Marges">
+    <meta property="og:description" content="Optimisez vos prix et maximisez vos marges avec notre outil d'analyse stratégique">
+    <meta property="og:type" content="website">
+    
+    <title>Leeket - Dashboard Pricing & Marges | Optimisation Tarifaire</title>
+    
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
+    <!-- SheetJS pour lire les fichiers Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #f44336;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 20px;
+            background-attachment: fixed;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        /* Header avec logo */
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header .subtitle {
+            font-size: 1.1em;
+            opacity: 0.95;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .version-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85em;
+        }
+        
+        /* Upload Section améliorée */
+        .upload-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .upload-area {
+            border: 3px dashed var(--primary);
+            border-radius: 15px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: linear-gradient(45deg, rgba(102,126,234,0.03) 0%, rgba(118,75,162,0.03) 100%);
+        }
+        
+        .upload-area:hover {
+            background: linear-gradient(45deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.08) 100%);
+            border-color: var(--secondary);
+            transform: translateY(-2px);
+        }
+        
+        .upload-area.dragover {
+            background: linear-gradient(45deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+            transform: scale(1.02);
+            border-color: var(--secondary);
+        }
+        
+        .upload-icon {
+            font-size: 4em;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        
+        .upload-text {
+            color: var(--dark);
+            font-size: 1.2em;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .upload-subtext {
+            color: var(--gray);
+            font-size: 0.95em;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        /* KPI Cards améliorées */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .kpi-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 2em;
+            opacity: 0.1;
+        }
+        
+        .kpi-card .label {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .kpi-card .value {
+            font-size: 2.2em;
+            font-weight: bold;
+            color: var(--dark);
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .kpi-card .trend {
+            font-size: 0.85em;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .trend.positive { color: var(--success); }
+        .trend.negative { color: var(--danger); }
+        .trend.neutral { color: var(--gray); }
+        
+        /* Analysis Cards */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .analysis-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .analysis-card.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        /* Tables améliorées */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .pricing-table thead {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+        
+        .pricing-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .pricing-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .pricing-table tbody tr {
+            transition: background 0.2s ease;
+        }
+        
+        .pricing-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .margin-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .margin-high { 
+            background: #c8e6c9; 
+            color: #2e7d32; 
+        }
+        .margin-medium { 
+            background: #fff3e0; 
+            color: #f57c00; 
+        }
+        .margin-low { 
+            background: #ffebee; 
+            color: #c62828; 
+        }
+        
+        /* Strategy Cards */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .strategy-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .strategy-card:hover {
+            transform: translateX(5px);
+        }
+        
+        .strategy-card h3 {
+            color: var(--dark);
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        
+        .strategy-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .strategy-card ul {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+        
+        .strategy-card li {
+            color: #666;
+            margin: 8px 0;
+            list-style-type: none;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .strategy-card li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        
+        /* Tabs améliorés */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            position: relative;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        
+        .tab:hover {
+            color: var(--primary);
+            background: rgba(102, 126, 234, 0.05);
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Loader amélioré */
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loader.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loader-text {
+            margin-top: 20px;
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification.error {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .notification-icon {
+            font-size: 1.5em;
+        }
+        
+        .notification.success .notification-icon {
+            color: var(--success);
+        }
+        
+        .notification.error .notification-icon {
+            color: var(--danger);
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px;
+            color: white;
+            margin-top: 50px;
+        }
+        
+        .footer p {
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        
+        .footer .links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .footer a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.8;
+            transition: opacity 0.3s ease;
+        }
+        
+        .footer a:hover {
+            opacity: 1;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tabs {
+                flex-wrap: nowrap;
+                overflow-x: scroll;
+            }
+            
+            .strategy-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .pricing-table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .upload-section {
+                display: none;
+            }
+            
+            .header {
+                background: white;
+                color: var(--dark);
+                border: 2px solid var(--primary);
+            }
+            
+            .header h1 {
+                color: var(--primary);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header avec version -->
+        <div class="header">
+            <span class="version-badge">v1.0.0</span>
+            <div style="position: absolute; top: 20px; left: 20px;">
+                <span id="userInfo" style="color: white; opacity: 0.9; margin-right: 15px;"></span>
+                <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </button>
+            </div>
+            <h1><i class="fas fa-chart-line"></i> Dashboard Stratégique de Pricing & Marges</h1>
+            <p class="subtitle">Optimisation tarifaire et analyse de rentabilité pour Leeket</p>
+        </div>
+
+        <!-- Section Upload et Google Sheets -->
+        <div class="upload-section">
+            <h2 style="margin-bottom: 20px; color: var(--dark);"><i class="fas fa-database"></i> Source de données</h2>
+
+            <!-- Statut de connexion Google Sheets -->
+            <div id="googleSheetsStatus" style="display: none; margin-bottom: 20px; padding: 15px; border-radius: 10px; background: #e8f5e9; border: 1px solid #4CAF50;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 10px;"></i>
+                        <strong>Google Sheets connecté</strong>
+                        <span id="lastSync" style="margin-left: 10px; color: #666; font-size: 0.9em;"></span>
+                    </div>
+                    <div>
+                        <button onclick="syncGoogleSheets()" style="background: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                            <i class="fas fa-sync-alt"></i> Synchroniser
+                        </button>
+                        <button onclick="configureGoogleSheets()" style="background: #667eea; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                            <i class="fas fa-cog"></i> Configurer
+                        </button>
+                    </div>
+                </div>
+                <div id="autoSyncStatus" style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    <i class="fas fa-clock"></i> Synchronisation automatique toutes les 5 minutes
+                </div>
+            </div>
+
+            <!-- Option de connexion Google Sheets -->
+            <div id="googleSheetsSetup" style="margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+                <h3 style="margin-bottom: 10px;"><i class="fas fa-link"></i> Connecter Google Sheets</h3>
+                <p style="margin-bottom: 15px; opacity: 0.95;">Synchronisez automatiquement vos données depuis Google Sheets</p>
+                <button onclick="configureGoogleSheets()" style="background: white; color: #667eea; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+                    <i class="fas fa-plug"></i> Configurer la connexion
+                </button>
+            </div>
+
+            <!-- Upload manuel (optionnel) -->
+            <div style="text-align: center; margin: 20px 0;">
+                <p style="color: #666; margin-bottom: 10px;">ou</p>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <h3 class="upload-text">Importer un fichier Excel manuellement</h3>
+                <p class="upload-subtext">Glissez ou cliquez pour sélectionner (formats: .xlsx, .xls, .csv)</p>
+                <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+            </div>
+            <div class="loader" id="loader">
+                <div class="spinner"></div>
+                <p class="loader-text">Synchronisation des données...</p>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" id="notification">
+            <span class="notification-icon"></span>
+            <div>
+                <div class="notification-title"></div>
+                <div class="notification-message"></div>
+            </div>
+        </div>
+
+        <!-- KPIs Principaux -->
+        <div class="kpi-grid" id="kpiGrid">
+            <div class="kpi-card">
+                <i class="fas fa-box kpi-icon"></i>
+                <div class="label">Produits Analysés</div>
+                <div class="value" id="totalProducts">0</div>
+                <div class="trend neutral">En attente des données</div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-tags kpi-icon"></i>
+                <div class="label">Prix Moyen Marché</div>
+                <div class="value" id="avgMarketPrice">-</div>
+                <div class="trend neutral">FCFA par produit</div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-percentage kpi-icon"></i>
+                <div class="label">Marge Moyenne Cible</div>
+                <div class="value" id="avgMargin">35%</div>
+                <div class="trend positive">↑ Optimisé</div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-chart-area kpi-icon"></i>
+                <div class="label">Potentiel CA Mensuel</div>
+                <div class="value" id="monthlyRevenue">-</div>
+                <div class="trend neutral">FCFA estimé</div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-shopping-basket kpi-icon"></i>
+                <div class="label">Prix Optimal Panier</div>
+                <div class="value" id="optimalBasket">8,500</div>
+                <div class="trend positive">Zone acceptabilité</div>
+            </div>
+            <div class="kpi-card">
+                <i class="fas fa-rocket kpi-icon"></i>
+                <div class="label">ROI Projeté</div>
+                <div class="value" id="projectedROI">45%</div>
+                <div class="trend positive">↑ Sur 6 mois</div>
+            </div>
+        </div>
+
+        <!-- Analyses -->
+        <div class="analysis-grid">
+            <!-- Distribution des Prix -->
+            <div class="analysis-card">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-bar"></i> Distribution des Prix du Marché
+                </h2>
+                <div class="chart-container">
+                    <canvas id="priceDistributionChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Analyse des Marges -->
+            <div class="analysis-card">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-pie"></i> Analyse des Marges par Catégorie
+                </h2>
+                <div class="chart-container">
+                    <canvas id="marginAnalysisChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Matrice BCG Produits -->
+            <div class="analysis-card">
+                <h2 class="card-title">
+                    <i class="fas fa-star"></i> Matrice BCG des Produits
+                </h2>
+                <div class="chart-container">
+                    <canvas id="bcgMatrixChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Élasticité Prix -->
+            <div class="analysis-card">
+                <h2 class="card-title">
+                    <i class="fas fa-bullseye"></i> Élasticité Prix-Demande
+                </h2>
+                <div class="chart-container">
+                    <canvas id="elasticityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table de Pricing Détaillée -->
+        <div class="analysis-card full-width">
+            <h2 class="card-title">
+                <i class="fas fa-list-alt"></i> Stratégie de Prix Détaillée
+            </h2>
+            
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('topProducts', event)">
+                    <i class="fas fa-trophy"></i> Top Produits
+                </button>
+                <button class="tab" onclick="switchTab('categories', event)">
+                    <i class="fas fa-th-large"></i> Par Catégorie
+                </button>
+                <button class="tab" onclick="switchTab('optimization', event)">
+                    <i class="fas fa-cogs"></i> Optimisation
+                </button>
+                <button class="tab" onclick="switchTab('competition', event)">
+                    <i class="fas fa-users"></i> Concurrence
+                </button>
+            </div>
+
+            <div id="topProducts" class="tab-content active">
+                <table class="pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>Prix Marché</th>
+                            <th>Prix Leeket Suggéré</th>
+                            <th>Marge Brute</th>
+                            <th>Volume Estimé/Mois</th>
+                            <th>CA Potentiel</th>
+                            <th>Stratégie</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topProductsTable">
+                        <!-- Contenu dynamique -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="categories" class="tab-content">
+                <table class="pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Catégorie</th>
+                            <th>Nb Produits</th>
+                            <th>Prix Moyen</th>
+                            <th>Marge Moyenne</th>
+                            <th>Performance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="categoriesTable">
+                        <!-- Contenu dynamique -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="optimization" class="tab-content">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-lightbulb"></i> Recommandations d'Optimisation</h3>
+                <div class="strategy-grid" id="optimizationGrid">
+                    <!-- Contenu dynamique -->
+                </div>
+            </div>
+
+            <div id="competition" class="tab-content">
+                <h3 style="margin-bottom: 15px;"><i class="fas fa-trophy"></i> Analyse Concurrentielle</h3>
+                <table class="pricing-table">
+                    <thead>
+                        <tr>
+                            <th>Concurrent</th>
+                            <th>Prix Moyen</th>
+                            <th>Livraison</th>
+                            <th>Délai</th>
+                            <th>Notre Avantage</th>
+                        </tr>
+                    </thead>
+                    <tbody id="competitionTable">
+                        <!-- Contenu dynamique -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Projections Financières -->
+        <div class="analysis-card full-width">
+            <h2 class="card-title">
+                <i class="fas fa-chart-line"></i> Projections Financières (6 mois)
+            </h2>
+            <div class="chart-container" style="height: 400px;">
+                <canvas id="financialProjectionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recommandations Stratégiques -->
+        <div class="analysis-card full-width">
+            <h2 class="card-title">
+                <i class="fas fa-rocket"></i> Plan d'Action Stratégique
+            </h2>
+            <div class="strategy-grid" id="strategyGrid">
+                <!-- Contenu dynamique -->
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2025 Leeket - Dashboard de Pricing & Marges</p>
+            <p>Optimisé pour votre succès commercial</p>
+            <div class="links">
+                <a href="#"><i class="fas fa-envelope"></i> Contact</a>
+                <a href="#"><i class="fas fa-file-alt"></i> Documentation</a>
+                <a href="#"><i class="fas fa-download"></i> Exporter</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== APPLICATION LEEKET PRICING DASHBOARD ====================
+        
+        // Configuration globale
+        const CONFIG = {
+            targetMargin: 0.35, // 35% de marge cible
+            deliveryPrice: 1000, // Prix livraison standard
+            currency: 'FCFA',
+            locale: 'fr-FR'
+        };
+
+        // État de l'application
+        let appState = {
+            products: [],
+            categories: {},
+            charts: {},
+            currentData: null
+        };
+
+        // ==================== INITIALISATION ====================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Vérifier l'authentification
+            checkAuthentication();
+            initializeApp();
+
+            // Vérifier si Google Sheets est configuré
+            checkGoogleSheetsConfig();
+
+            setupEventListeners();
+            initializeCharts();
+        });
+
+        function checkAuthentication() {
+            const token = sessionStorage.getItem('leeketToken') || localStorage.getItem('leeketToken');
+
+            if (!token || !isValidToken(token)) {
+                // Rediriger vers la page de connexion
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Afficher les informations de l'utilisateur
+            try {
+                const data = JSON.parse(atob(token));
+                const userInfo = document.getElementById('userInfo');
+                if (userInfo) {
+                    userInfo.innerHTML = '<i class="fas fa-user-circle"></i> ' + data.username;
+                }
+            } catch (e) {
+                console.error('Erreur de lecture du token');
+                window.location.href = 'index.html';
+            }
+        }
+
+        function isValidToken(token) {
+            try {
+                const data = JSON.parse(atob(token));
+                return data.expires > Date.now();
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function logout() {
+            // Supprimer les tokens
+            sessionStorage.removeItem('leeketToken');
+            localStorage.removeItem('leeketToken');
+
+            // Rediriger vers la page de connexion
+            window.location.href = 'index.html';
+        }
+
+        function initializeApp() {
+            console.log('🚀 Leeket Pricing Dashboard v1.0.0 initialisé');
+            Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        }
+
+        // ==================== GOOGLE SHEETS INTEGRATION ====================
+
+        let autoSyncInterval = null;
+
+        function checkGoogleSheetsConfig() {
+            const config = localStorage.getItem('leeketGoogleSheetConfig');
+
+            if (config) {
+                // Configuration trouvée, masquer le setup et afficher le statut
+                document.getElementById('googleSheetsSetup').style.display = 'none';
+                document.getElementById('googleSheetsStatus').style.display = 'block';
+
+                // Charger les données depuis Google Sheets
+                syncGoogleSheets();
+
+                // Configurer la synchronisation automatique (toutes les 5 minutes)
+                if (autoSyncInterval) clearInterval(autoSyncInterval);
+                autoSyncInterval = setInterval(syncGoogleSheets, 5 * 60 * 1000);
+            } else {
+                // Pas de configuration, charger les données par défaut
+                loadDefaultData();
+            }
+        }
+
+        function configureGoogleSheets() {
+            window.open('google-sheets-config.html', '_blank');
+        }
+
+        function syncGoogleSheets() {
+            const configStr = localStorage.getItem('leeketGoogleSheetConfig');
+            if (!configStr) {
+                loadDefaultData();
+                return;
+            }
+
+            const config = JSON.parse(configStr);
+            const loader = document.getElementById('loader');
+            const uploadArea = document.getElementById('uploadArea');
+
+            // Afficher le loader
+            loader.classList.add('active');
+            if (uploadArea) uploadArea.style.opacity = '0.5';
+
+            // Mettre à jour le statut
+            const syncButton = document.querySelector('button[onclick="syncGoogleSheets()"]');
+            if (syncButton) {
+                syncButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
+                syncButton.disabled = true;
+            }
+
+            // Utiliser l'API Google Sheets
+            fetchGoogleSheetData(config)
+                .then(data => {
+                    processGoogleSheetData(data);
+                    updateLastSyncTime();
+                    showNotification('success', 'Synchronisation réussie', `${appState.products.length} produits mis à jour`);
+                })
+                .catch(error => {
+                    console.error('Erreur de synchronisation:', error);
+                    showNotification('error', 'Erreur de synchronisation', 'Impossible de récupérer les données depuis Google Sheets');
+                    // Charger les données par défaut en cas d'erreur
+                    loadDefaultData();
+                })
+                .finally(() => {
+                    loader.classList.remove('active');
+                    if (uploadArea) uploadArea.style.opacity = '1';
+                    if (syncButton) {
+                        syncButton.innerHTML = '<i class="fas fa-sync-alt"></i> Synchroniser';
+                        syncButton.disabled = false;
+                    }
+                });
+        }
+
+        function fetchGoogleSheetData(config) {
+            // Format URL pour accéder aux données via l'API publique de Google Sheets
+            const sheetId = config.sheetId;
+            const sheetName = config.sheetName || 'Sheet1';
+
+            // URL pour obtenir les données en JSON
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs`;
+
+            // Alternative: utiliser l'export CSV (plus simple mais nécessite un traitement)
+            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`;
+
+            // Essayer d'abord avec l'API JSON
+            return fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        // Si l'API échoue, essayer avec CSV
+                        return fetchCSVData(csvUrl);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.values) {
+                        return parseGoogleSheetValues(data.values);
+                    }
+                    return data;
+                })
+                .catch(() => {
+                    // En cas d'échec, essayer la méthode CSV
+                    return fetchCSVData(csvUrl);
+                });
+        }
+
+        function fetchCSVData(csvUrl) {
+            // Utiliser un proxy CORS si nécessaire
+            const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+
+            return fetch(csvUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        // Essayer avec le proxy
+                        return fetch(proxyUrl + csvUrl);
+                    }
+                    return response;
+                })
+                .then(response => response.text())
+                .then(csvText => parseCSV(csvText));
+        }
+
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim()) {
+                    const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+                    const row = {};
+                    headers.forEach((header, index) => {
+                        row[header] = values[index];
+                    });
+                    data.push(row);
+                }
+            }
+
+            return data;
+        }
+
+        function parseGoogleSheetValues(values) {
+            if (!values || values.length < 2) return [];
+
+            const headers = values[0];
+            const data = [];
+
+            for (let i = 1; i < values.length; i++) {
+                const row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[i][index] || '';
+                });
+                data.push(row);
+            }
+
+            return data;
+        }
+
+        function processGoogleSheetData(data) {
+            const products = data.map(function(row, index) {
+                // Adapter selon la structure de votre Google Sheet
+                const marketPrice = parseFloat(row['Prix'] || row['Prix Marché'] || row['Price'] || row['price'] || 0);
+
+                // Vérifier que le prix est valide
+                if (isNaN(marketPrice) || marketPrice <= 0) {
+                    return null;
+                }
+
+                const cost = parseFloat(row['Coût'] || row['Cost'] || row['cout']) || (marketPrice * 0.65);
+                const suggestedPrice = parseFloat(row['Prix Suggéré'] || row['Suggested Price']) || Math.round(marketPrice * 1.2);
+                const margin = suggestedPrice > 0 ? ((suggestedPrice - cost) / suggestedPrice * 100).toFixed(0) : 0;
+                const volume = parseInt(row['Volume'] || row['Quantité']) || Math.floor(Math.random() * 300) + 100;
+
+                return {
+                    name: row['Produit'] || row['Product'] || row['Nom'] || `Produit ${index + 1}`,
+                    marketPrice: marketPrice,
+                    cost: cost,
+                    suggestedPrice: suggestedPrice,
+                    margin: parseFloat(margin),
+                    volume: volume,
+                    category: row['Catégorie'] || row['Category'] || 'Non catégorisé'
+                };
+            }).filter(function(product) { return product !== null; });
+
+            if (products.length > 0) {
+                appState.products = products;
+                updateDashboard(products);
+            } else {
+                // Si aucun produit valide, charger les données par défaut
+                loadDefaultData();
+            }
+        }
+
+        function updateLastSyncTime() {
+            const lastSyncElement = document.getElementById('lastSync');
+            if (lastSyncElement) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                lastSyncElement.textContent = `(Dernière sync: ${timeStr})`;
+            }
+        }
+
+        function loadDefaultData() {
+            // Données par défaut basées sur votre sondage
+            const defaultProducts = [
+                { name: 'Thieboudienne', marketPrice: 3500, suggestedPrice: 4200, margin: 35, volume: 450, category: 'Plats principaux' },
+                { name: 'Yassa Poulet', marketPrice: 3000, suggestedPrice: 3800, margin: 37, volume: 420, category: 'Plats principaux' },
+                { name: 'Mafé', marketPrice: 2800, suggestedPrice: 3500, margin: 32, volume: 280, category: 'Plats principaux' },
+                { name: 'Ceebu Jen Blanc', marketPrice: 2500, suggestedPrice: 3200, margin: 30, volume: 280, category: 'Plats principaux' },
+                { name: 'Sup Kanja', marketPrice: 2600, suggestedPrice: 3300, margin: 31, volume: 250, category: 'Plats principaux' },
+                { name: 'Thiou', marketPrice: 2700, suggestedPrice: 3400, margin: 31, volume: 230, category: 'Plats principaux' },
+                { name: 'Caldou', marketPrice: 2900, suggestedPrice: 3700, margin: 33, volume: 230, category: 'Plats principaux' },
+                { name: 'Domoda', marketPrice: 2400, suggestedPrice: 3100, margin: 29, volume: 200, category: 'Plats principaux' },
+                { name: 'Firire', marketPrice: 2200, suggestedPrice: 2900, margin: 28, volume: 130, category: 'Plats principaux' },
+                { name: 'Fataya', marketPrice: 800, suggestedPrice: 1200, margin: 45, volume: 200, category: 'Snacks' },
+                { name: 'Panier Mix (5 produits)', marketPrice: 12000, suggestedPrice: 14500, margin: 40, volume: 150, category: 'Paniers' }
+            ];
+
+            appState.products = defaultProducts;
+            updateDashboard(defaultProducts);
+        }
+
+        // ==================== GESTION DES FICHIERS ====================
+        
+        function setupEventListeners() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('click', function() { 
+                fileInput.click(); 
+            });
+
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        }
+
+        function handleFile(file) {
+            const loader = document.getElementById('loader');
+            const uploadArea = document.getElementById('uploadArea');
+            
+            loader.classList.add('active');
+            uploadArea.style.display = 'none';
+
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+                        throw new Error('Le fichier Excel est vide ou invalide');
+                    }
+
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+
+                    if (!jsonData || jsonData.length === 0) {
+                        throw new Error('Aucune donnée trouvée dans le fichier');
+                    }
+
+                    processExcelData(jsonData);
+
+                    showNotification('success', 'Fichier importé avec succès', `${jsonData.length} produits analysés`);
+                } catch (error) {
+                    console.error('Erreur lors de la lecture du fichier:', error);
+                    showNotification('error', 'Erreur', error.message || 'Impossible de lire le fichier');
+                } finally {
+                    loader.classList.remove('active');
+                    uploadArea.style.display = 'block';
+                }
+            };
+            
+            reader.onerror = function() {
+                console.error('Erreur de lecture du fichier');
+                showNotification('error', 'Erreur', 'Erreur lors de la lecture du fichier');
+                loader.classList.remove('active');
+                uploadArea.style.display = 'block';
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processExcelData(data) {
+            const products = data.map(function(row, index) {
+                // Adapter selon la structure de votre fichier Excel
+                const marketPrice = parseFloat(row['Prix'] || row['Prix Marché'] || row['price'] || 0);
+
+                // Vérifier que le prix est valide
+                if (isNaN(marketPrice) || marketPrice <= 0) {
+                    console.warn('Prix invalide pour le produit', row);
+                    return null;
+                }
+
+                const cost = marketPrice * 0.65; // Estimation du coût (65% du prix marché)
+                const suggestedPrice = Math.round(marketPrice * 1.2); // Prix suggéré (+20%)
+                const margin = suggestedPrice > 0 ? ((suggestedPrice - cost) / suggestedPrice * 100).toFixed(0) : 0;
+
+                return {
+                    name: row['Produit'] || row['Product'] || row['Nom'] || 'Produit ' + (index + 1),
+                    marketPrice: marketPrice,
+                    cost: cost,
+                    suggestedPrice: suggestedPrice,
+                    margin: parseFloat(margin),
+                    volume: Math.floor(Math.random() * 300) + 100, // Volume estimé
+                    category: row['Catégorie'] || row['Category'] || 'Non catégorisé'
+                };
+            }).filter(function(product) { return product !== null; });
+            
+            appState.products = products;
+            updateDashboard(products);
+        }
+
+        // ==================== MISE À JOUR DU DASHBOARD ====================
+        
+        function updateDashboard(products) {
+            updateKPIs(products);
+            updateTables(products);
+            updateCharts(products);
+            updateStrategies(products);
+        }
+
+        function updateKPIs(products) {
+            const totalProducts = products.length;
+            if (totalProducts === 0) {
+                document.getElementById('totalProducts').textContent = '0';
+                document.getElementById('avgMarketPrice').textContent = '-';
+                document.getElementById('monthlyRevenue').textContent = '-';
+                return;
+            }
+
+            const avgPrice = products.reduce(function(sum, p) { return sum + (p.marketPrice || 0); }, 0) / totalProducts;
+            const totalVolume = products.reduce(function(sum, p) { return sum + (p.volume || 0); }, 0);
+            const monthlyRevenue = products.reduce(function(sum, p) { return sum + ((p.suggestedPrice || 0) * (p.volume || 0)); }, 0);
+
+            document.getElementById('totalProducts').textContent = totalProducts;
+            document.getElementById('avgMarketPrice').textContent = formatCurrency(avgPrice);
+            document.getElementById('monthlyRevenue').textContent = formatCurrency(monthlyRevenue / 1000000) + 'M';
+
+            // Animation des KPIs
+            animateKPIs();
+        }
+
+        function updateTables(products) {
+            // Table Top Produits
+            const topProductsTable = document.getElementById('topProductsTable');
+            topProductsTable.innerHTML = '';
+            
+            const topProducts = products.sort(function(a, b) { return b.volume - a.volume; }).slice(0, 10);
+            
+            topProducts.forEach(function(product) {
+                const ca = product.suggestedPrice * product.volume;
+                const marginClass = product.margin >= 35 ? 'margin-high' : 
+                                   product.margin >= 25 ? 'margin-medium' : 'margin-low';
+                
+                const strategy = product.volume > 300 ? '🔥 Produit phare' :
+                               product.margin > 40 ? '💎 Premium' :
+                               '⭐ Volume';
+                
+                topProductsTable.innerHTML += 
+                    '<tr>' +
+                        '<td><strong>' + product.name + '</strong></td>' +
+                        '<td>' + formatCurrency(product.marketPrice) + '</td>' +
+                        '<td><strong>' + formatCurrency(product.suggestedPrice) + '</strong></td>' +
+                        '<td><span class="margin-badge ' + marginClass + '">' + product.margin + '%</span></td>' +
+                        '<td>' + product.volume + ' unités</td>' +
+                        '<td>' + formatCurrency(ca) + '</td>' +
+                        '<td>' + strategy + '</td>' +
+                    '</tr>';
+            });
+            
+            // Table Catégories
+            updateCategoriesTable(products);
+            
+            // Table Concurrence
+            updateCompetitionTable();
+            
+            // Optimisations
+            updateOptimizationCards();
+            
+            // Stratégies
+            updateStrategyCards();
+        }
+
+        function updateCategoriesTable(products) {
+            const categoriesTable = document.getElementById('categoriesTable');
+            const categories = {};
+            
+            products.forEach(function(p) {
+                if (!categories[p.category]) {
+                    categories[p.category] = {
+                        count: 0,
+                        totalPrice: 0,
+                        totalMargin: 0
+                    };
+                }
+                categories[p.category].count++;
+                categories[p.category].totalPrice += p.suggestedPrice;
+                categories[p.category].totalMargin += p.margin;
+            });
+            
+            categoriesTable.innerHTML = '';
+            
+            Object.keys(categories).forEach(function(cat) {
+                const catData = categories[cat];
+                const avgPrice = catData.totalPrice / catData.count;
+                const avgMargin = catData.count > 0 ? catData.totalMargin / catData.count : 0;
+                const marginClass = avgMargin >= 35 ? 'margin-high' : 
+                                   avgMargin >= 25 ? 'margin-medium' : 'margin-low';
+                const stars = '⭐'.repeat(Math.min(5, Math.ceil(avgMargin / 10)));
+                
+                categoriesTable.innerHTML += 
+                    '<tr>' +
+                        '<td><strong>' + cat + '</strong></td>' +
+                        '<td>' + catData.count + '</td>' +
+                        '<td>' + formatCurrency(avgPrice) + '</td>' +
+                        '<td><span class="margin-badge ' + marginClass + '">' + avgMargin.toFixed(0) + '%</span></td>' +
+                        '<td>' + stars + '</td>' +
+                    '</tr>';
+            });
+        }
+
+        function updateCompetitionTable() {
+            const competitionTable = document.getElementById('competitionTable');
+            competitionTable.innerHTML = 
+                '<tr>' +
+                    '<td>Restaurants locaux</td>' +
+                    '<td>3,500 ' + CONFIG.currency + '</td>' +
+                    '<td>1,500 ' + CONFIG.currency + '</td>' +
+                    '<td>45-60 min</td>' +
+                    '<td>✅ -20% délai, qualité constante</td>' +
+                '</tr>' +
+                '<tr>' +
+                    '<td>Services livraison</td>' +
+                    '<td>4,000 ' + CONFIG.currency + '</td>' +
+                    '<td>2,000 ' + CONFIG.currency + '</td>' +
+                    '<td>60-90 min</td>' +
+                    '<td>✅ -30% prix livraison</td>' +
+                '</tr>' +
+                '<tr>' +
+                    '<td>Marchés traditionnels</td>' +
+                    '<td>2,500 ' + CONFIG.currency + '</td>' +
+                    '<td>N/A</td>' +
+                    '<td>N/A</td>' +
+                    '<td>✅ Praticité, hygiène, régularité</td>' +
+                '</tr>';
+        }
+
+        function updateOptimizationCards() {
+            const optimizationGrid = document.getElementById('optimizationGrid');
+            optimizationGrid.innerHTML = '';
+            
+            // Card 1
+            const card1 = document.createElement('div');
+            card1.className = 'strategy-card';
+            card1.innerHTML = '<h3><i class="fas fa-box"></i> Stratégie Bundle</h3>' +
+                '<p>Créez des offres groupées pour augmenter le panier moyen :</p>' +
+                '<ul>' +
+                    '<li>Menu Famille : 15,000 ' + CONFIG.currency + ' (marge 38%)</li>' +
+                    '<li>Pack Semaine : 35,000 ' + CONFIG.currency + ' (marge 40%)</li>' +
+                    '<li>Formule Déjeuner : 5,500 ' + CONFIG.currency + ' (marge 32%)</li>' +
+                '</ul>';
+            optimizationGrid.appendChild(card1);
+            
+            // Card 2
+            const card2 = document.createElement('div');
+            card2.className = 'strategy-card';
+            card2.innerHTML = '<h3><i class="fas fa-clock"></i> Pricing Dynamique</h3>' +
+                '<p>Ajustez vos prix selon :</p>' +
+                '<ul>' +
+                    '<li>Heures creuses : -10% (11h-12h)</li>' +
+                    '<li>Weekend : +5% sur premium</li>' +
+                    '<li>Commandes anticipées : -5%</li>' +
+                '</ul>';
+            optimizationGrid.appendChild(card2);
+            
+            // Card 3
+            const card3 = document.createElement('div');
+            card3.className = 'strategy-card';
+            card3.innerHTML = '<h3><i class="fas fa-gift"></i> Programme Fidélité</h3>' +
+                '<p>Optimisez la rétention :</p>' +
+                '<ul>' +
+                    '<li>5ème commande : -15%</li>' +
+                    '<li>Abonnement mensuel : -20%</li>' +
+                    '<li>Parrainage : 1000 ' + CONFIG.currency + ' offerts</li>' +
+                '</ul>';
+            optimizationGrid.appendChild(card3);
+        }
+
+        function updateStrategyCards() {
+            const strategyGrid = document.getElementById('strategyGrid');
+            strategyGrid.innerHTML = '';
+            
+            // Phase 1
+            const phase1 = document.createElement('div');
+            phase1.className = 'strategy-card';
+            phase1.innerHTML = '<h3><i class="fas fa-calendar-alt"></i> Phase 1 : Lancement (Mois 1-2)</h3>' +
+                '<ul>' +
+                    '<li>Prix d\'appel : -20% sur les 100 premières commandes</li>' +
+                    '<li>Focus : Top 3 produits populaires</li>' +
+                    '<li>Objectif : 200 clients, 800 commandes</li>' +
+                    '<li>CA cible : 6,800,000 ' + CONFIG.currency + '</li>' +
+                '</ul>';
+            strategyGrid.appendChild(phase1);
+            
+            // Phase 2
+            const phase2 = document.createElement('div');
+            phase2.className = 'strategy-card';
+            phase2.innerHTML = '<h3><i class="fas fa-chart-line"></i> Phase 2 : Croissance (Mois 3-4)</h3>' +
+                '<ul>' +
+                    '<li>Prix normal avec programme fidélité</li>' +
+                    '<li>Extension : +5 plats populaires</li>' +
+                    '<li>Objectif : 500 clients, 2000 commandes</li>' +
+                    '<li>CA cible : 17,000,000 ' + CONFIG.currency + '</li>' +
+                '</ul>';
+            strategyGrid.appendChild(phase2);
+            
+            // Phase 3
+            const phase3 = document.createElement('div');
+            phase3.className = 'strategy-card';
+            phase3.innerHTML = '<h3><i class="fas fa-bullseye"></i> Phase 3 : Optimisation (Mois 5-6)</h3>' +
+                '<ul>' +
+                    '<li>Pricing dynamique activé</li>' +
+                    '<li>Offres premium et bundles</li>' +
+                    '<li>Objectif : 1000 clients, 4000 commandes</li>' +
+                    '<li>CA cible : 34,000,000 ' + CONFIG.currency + '</li>' +
+                '</ul>';
+            strategyGrid.appendChild(phase3);
+        }
+
+        // ==================== GRAPHIQUES ====================
+        
+        function initializeCharts() {
+            // 1. Distribution des Prix
+            const priceDistCtx = document.getElementById('priceDistributionChart').getContext('2d');
+            appState.charts.priceDistribution = new Chart(priceDistCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-1k', '1-2k', '2-3k', '3-4k', '4-5k', '5k+'],
+                    datasets: [{
+                        label: 'Nombre de produits',
+                        data: [2, 3, 5, 2, 1, 1],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 2,
+                        borderRadius: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Nombre de produits'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: `Prix (${CONFIG.currency})`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Analyse des Marges
+            const marginCtx = document.getElementById('marginAnalysisChart').getContext('2d');
+            appState.charts.marginAnalysis = new Chart(marginCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Marge élevée (>35%)', 'Marge moyenne (25-35%)', 'Marge faible (<25%)'],
+                    datasets: [{
+                        data: [45, 35, 20],
+                        backgroundColor: [
+                            'rgba(76, 175, 80, 0.8)',
+                            'rgba(255, 193, 7, 0.8)',
+                            'rgba(244, 67, 54, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgba(76, 175, 80, 1)',
+                            'rgba(255, 193, 7, 1)',
+                            'rgba(244, 67, 54, 1)'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15 }
+                        }
+                    }
+                }
+            });
+
+            // 3. Matrice BCG
+            const bcgCtx = document.getElementById('bcgMatrixChart').getContext('2d');
+            appState.charts.bcgMatrix = new Chart(bcgCtx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: 'Stars ⭐',
+                        data: [
+                            {x: 75, y: 80, r: 15},
+                            {x: 70, y: 75, r: 12}
+                        ],
+                        backgroundColor: 'rgba(76, 175, 80, 0.6)',
+                        borderColor: 'rgba(76, 175, 80, 1)'
+                    }, {
+                        label: 'Cash Cows 🐄',
+                        data: [
+                            {x: 65, y: 30, r: 10},
+                            {x: 60, y: 25, r: 8}
+                        ],
+                        backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                        borderColor: 'rgba(255, 193, 7, 1)'
+                    }, {
+                        label: 'Question Marks ❓',
+                        data: [
+                            {x: 25, y: 60, r: 8},
+                            {x: 30, y: 55, r: 6}
+                        ],
+                        backgroundColor: 'rgba(33, 150, 243, 0.6)',
+                        borderColor: 'rgba(33, 150, 243, 1)'
+                    }, {
+                        label: 'Dogs 🐕',
+                        data: [
+                            {x: 20, y: 15, r: 5},
+                            {x: 15, y: 10, r: 4}
+                        ],
+                        backgroundColor: 'rgba(244, 67, 54, 0.6)',
+                        borderColor: 'rgba(244, 67, 54, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 10 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Part de marché (%)'
+                            },
+                            min: 0,
+                            max: 100
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Croissance (%)'
+                            },
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+
+            // 4. Élasticité Prix
+            const elasticityCtx = document.getElementById('elasticityChart').getContext('2d');
+            appState.charts.elasticity = new Chart(elasticityCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2000', '2500', '3000', '3500', '4000', '4500', '5000'],
+                    datasets: [{
+                        label: 'Demande Thieboudienne',
+                        data: [100, 95, 88, 75, 60, 40, 25],
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Demande Yassa',
+                        data: [100, 92, 85, 70, 55, 35, 20],
+                        borderColor: 'rgba(118, 75, 162, 1)',
+                        backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15 }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: `Prix (${CONFIG.currency})`
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Demande (%)'
+                            },
+                            min: 0,
+                            max: 110
+                        }
+                    }
+                }
+            });
+
+            // 5. Projections Financières
+            const projectionCtx = document.getElementById('financialProjectionChart').getContext('2d');
+            appState.charts.projection = new Chart(projectionCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mois 1', 'Mois 2', 'Mois 3', 'Mois 4', 'Mois 5', 'Mois 6'],
+                    datasets: [{
+                        label: 'Chiffre d\'affaires',
+                        data: [3200000, 4800000, 8500000, 12000000, 16500000, 21000000],
+                        borderColor: 'rgba(76, 175, 80, 1)',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Coûts',
+                        data: [2800000, 3900000, 6200000, 8400000, 11000000, 13650000],
+                        borderColor: 'rgba(244, 67, 54, 1)',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Marge nette',
+                        data: [400000, 900000, 2300000, 3600000, 5500000, 7350000],
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Nombre de commandes',
+                        data: [200, 350, 600, 950, 1400, 2000],
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        borderDash: [5, 5],
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15 }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: `Montant (${CONFIG.currency})`
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(1) + 'M';
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Commandes'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(products) {
+            // Mise à jour des données de distribution des prix
+            const priceRanges = [0, 0, 0, 0, 0, 0];
+            products.forEach(function(p) {
+                if (p.marketPrice < 1000) priceRanges[0]++;
+                else if (p.marketPrice < 2000) priceRanges[1]++;
+                else if (p.marketPrice < 3000) priceRanges[2]++;
+                else if (p.marketPrice < 4000) priceRanges[3]++;
+                else if (p.marketPrice < 5000) priceRanges[4]++;
+                else priceRanges[5]++;
+            });
+            
+            appState.charts.priceDistribution.data.datasets[0].data = priceRanges;
+            appState.charts.priceDistribution.update();
+            
+            // Mise à jour des marges
+            const margins = [0, 0, 0];
+            products.forEach(function(p) {
+                if (p.margin > 35) margins[0]++;
+                else if (p.margin >= 25) margins[1]++;
+                else margins[2]++;
+            });
+            
+            const marginPercentages = products.length > 0 ? margins.map(function(m) {
+                return Math.round(m / products.length * 100);
+            }) : [0, 0, 0];
+            appState.charts.marginAnalysis.data.datasets[0].data = marginPercentages;
+            appState.charts.marginAnalysis.update();
+        }
+
+        // ==================== UTILITAIRES ====================
+        
+        function switchTab(tabName, event) {
+            // Masquer tous les contenus
+            document.querySelectorAll('.tab-content').forEach(function(content) {
+                content.classList.remove('active');
+            });
+
+            // Désactiver tous les tabs
+            document.querySelectorAll('.tab').forEach(function(tab) {
+                tab.classList.remove('active');
+            });
+
+            // Activer le contenu sélectionné
+            const tabContent = document.getElementById(tabName);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+
+            // Activer le tab correspondant
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
+        }
+
+        function showNotification(type, title, message) {
+            const notification = document.getElementById('notification');
+            const icon = notification.querySelector('.notification-icon');
+            const titleEl = notification.querySelector('.notification-title');
+            const messageEl = notification.querySelector('.notification-message');
+            
+            notification.className = 'notification ' + type + ' show';
+            icon.innerHTML = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
+            
+            if (titleEl) titleEl.textContent = title;
+            if (messageEl) messageEl.textContent = message;
+            
+            setTimeout(function() {
+                notification.classList.remove('show');
+            }, 5000);
+        }
+
+        function formatCurrency(value) {
+            if (value >= 1000000) {
+                return Math.round(value).toLocaleString(CONFIG.locale);
+            }
+            return Math.round(value).toLocaleString(CONFIG.locale);
+        }
+
+        function animateKPIs() {
+            const cards = document.querySelectorAll('.kpi-card');
+            cards.forEach(function(card, index) {
+                card.style.animation = 'none';
+                setTimeout(function() {
+                    card.style.animation = 'fadeIn 0.5s ease';
+                }, index * 100);
+            });
+        }
+
+        // ==================== EXPORT DES DONNÉES ====================
+        
+        function exportData() {
+            const wb = XLSX.utils.book_new();
+            
+            // Feuille Produits
+            const productsWs = appState.products && appState.products.length > 0 ?
+                XLSX.utils.json_to_sheet(appState.products) :
+                XLSX.utils.json_to_sheet([{message: 'Aucune donnée à exporter'}]);
+            XLSX.utils.book_append_sheet(wb, productsWs, 'Produits');
+            
+            // Téléchargement
+            XLSX.writeFile(wb, 'leeket_pricing_analysis.xlsx');
+            showNotification('success', 'Export réussi', 'Les données ont été exportées');
+        }
+
+        // ==================== RESPONSIVE ====================
+        
+        window.addEventListener('resize', function() {
+            if (appState.charts) {
+                Object.keys(appState.charts).forEach(function(key) {
+                    const chart = appState.charts[key];
+                    if (chart && typeof chart.resize === 'function') {
+                        chart.resize();
+                    }
+                });
+            }
+        });
+
+        // ==================== FIN DE L'APPLICATION ====================
+        
+        console.log('✨ Application prête à l'emploi!');
+    </script>
+</body>
+</html>

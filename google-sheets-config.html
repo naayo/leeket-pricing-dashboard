@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration Google Sheets - Leeket</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .config-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .step h2 {
+            color: #333;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        code {
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+        .code-block {
+            background: #2d3748;
+            color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            margin: 10px 0;
+        }
+        .test-area {
+            margin-top: 30px;
+            padding: 20px;
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="config-container">
+        <h1>🔗 Configuration Google Sheets pour Leeket Dashboard</h1>
+
+        <div class="warning">
+            <strong>⚠️ Important :</strong> Cette configuration nécessite de rendre votre Google Sheet publique en lecture seule ou d'utiliser une clé API Google.
+        </div>
+
+        <div class="step">
+            <h2>Étape 1 : Préparer votre Google Sheet</h2>
+            <ol>
+                <li>Ouvrez votre Google Sheet contenant les données de prix</li>
+                <li>Assurez-vous que votre feuille contient ces colonnes :
+                    <ul>
+                        <li><code>Produit</code> ou <code>Product</code> - Nom du produit</li>
+                        <li><code>Prix</code> ou <code>Prix Marché</code> - Prix du marché</li>
+                        <li><code>Catégorie</code> ou <code>Category</code> - Catégorie du produit (optionnel)</li>
+                        <li><code>Coût</code> ou <code>Cost</code> - Coût du produit (optionnel)</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h2>Étape 2 : Rendre le Google Sheet accessible</h2>
+
+            <h3>Option A : Méthode Simple (Recommandée)</h3>
+            <ol>
+                <li>Dans Google Sheets, cliquez sur <strong>Fichier > Partager > Publier sur le Web</strong></li>
+                <li>Choisissez la feuille à publier</li>
+                <li>Sélectionnez le format <strong>CSV</strong></li>
+                <li>Cliquez sur <strong>Publier</strong></li>
+                <li>Copiez le lien généré</li>
+            </ol>
+
+            <h3>Option B : Partage en lecture seule</h3>
+            <ol>
+                <li>Cliquez sur le bouton <strong>Partager</strong> en haut à droite</li>
+                <li>Changez les permissions à "Tous les utilisateurs disposant du lien peuvent consulter"</li>
+                <li>Copiez le lien de partage</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h2>Étape 3 : Obtenir l'ID de votre Google Sheet</h2>
+            <p>L'ID se trouve dans l'URL de votre Google Sheet :</p>
+            <div class="code-block">
+                https://docs.google.com/spreadsheets/d/<span style="color: #4ade80;">VOTRE_ID_ICI</span>/edit
+            </div>
+            <p>Exemple d'ID : <code>1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms</code></p>
+        </div>
+
+        <div class="step">
+            <h2>Étape 4 : Configurer l'accès dans le Dashboard</h2>
+            <input type="text" id="sheetId" placeholder="Collez l'ID de votre Google Sheet ici">
+            <input type="text" id="sheetName" placeholder="Nom de la feuille (par défaut: Sheet1)" value="Sheet1">
+            <button onclick="saveConfig()">💾 Sauvegarder la configuration</button>
+            <div id="configStatus"></div>
+        </div>
+
+        <div class="test-area">
+            <h2>Test de connexion</h2>
+            <button onclick="testConnection()">🔍 Tester la connexion</button>
+            <div id="testResult"></div>
+        </div>
+
+        <div class="success" style="display: none;" id="successMessage">
+            <strong>✅ Configuration réussie !</strong><br>
+            Vous pouvez maintenant retourner au <a href="leeket-pricing-dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        function saveConfig() {
+            const sheetId = document.getElementById('sheetId').value.trim();
+            const sheetName = document.getElementById('sheetName').value.trim() || 'Sheet1';
+
+            if (!sheetId) {
+                document.getElementById('configStatus').innerHTML = '<p style="color: red;">⚠️ Veuillez entrer un ID de Google Sheet</p>';
+                return;
+            }
+
+            // Extraire l'ID si c'est une URL complète
+            let cleanId = sheetId;
+            if (sheetId.includes('/d/')) {
+                const match = sheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (match) {
+                    cleanId = match[1];
+                }
+            }
+
+            // Sauvegarder dans localStorage
+            const config = {
+                sheetId: cleanId,
+                sheetName: sheetName,
+                csvUrl: `https://docs.google.com/spreadsheets/d/${cleanId}/gviz/tq?tqx=out:csv&sheet=${sheetName}`,
+                jsonUrl: `https://docs.google.com/spreadsheets/d/${cleanId}/gviz/tq?tqx=out:json&sheet=${sheetName}`
+            };
+
+            localStorage.setItem('leeketGoogleSheetConfig', JSON.stringify(config));
+
+            document.getElementById('configStatus').innerHTML = '<p style="color: green;">✅ Configuration sauvegardée avec succès</p>';
+            document.getElementById('successMessage').style.display = 'block';
+        }
+
+        function testConnection() {
+            const configStr = localStorage.getItem('leeketGoogleSheetConfig');
+            if (!configStr) {
+                document.getElementById('testResult').innerHTML = '<p style="color: red;">❌ Aucune configuration trouvée. Veuillez d\'abord configurer votre Google Sheet.</p>';
+                return;
+            }
+
+            const config = JSON.parse(configStr);
+            const testUrl = config.csvUrl;
+
+            document.getElementById('testResult').innerHTML = '<p>🔄 Test en cours...</p>';
+
+            // Test avec fetch via proxy CORS
+            fetch(`https://cors-anywhere.herokuapp.com/${testUrl}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    }
+                    throw new Error('Erreur de connexion');
+                })
+                .then(data => {
+                    const lines = data.split('\n').length;
+                    document.getElementById('testResult').innerHTML = `
+                        <p style="color: green;">✅ Connexion réussie !</p>
+                        <p>📊 ${lines - 1} lignes de données trouvées</p>
+                        <p style="font-size: 0.9em; color: #666;">Note : Si vous voyez une erreur CORS, utilisez l'intégration directe dans le dashboard.</p>
+                    `;
+                })
+                .catch(error => {
+                    document.getElementById('testResult').innerHTML = `
+                        <p style="color: orange;">⚠️ Impossible de tester directement (CORS)</p>
+                        <p>Cela est normal. L'intégration fonctionnera dans le dashboard.</p>
+                        <p style="font-size: 0.9em;">URL configurée : ${testUrl}</p>
+                    `;
+                });
+        }
+
+        // Charger la configuration existante si elle existe
+        window.addEventListener('DOMContentLoaded', function() {
+            const configStr = localStorage.getItem('leeketGoogleSheetConfig');
+            if (configStr) {
+                const config = JSON.parse(configStr);
+                document.getElementById('sheetId').value = config.sheetId;
+                document.getElementById('sheetName').value = config.sheetName;
+            }
+        });
+    </script>
+</body>
+</html>

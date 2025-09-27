@@ -1,0 +1,5 @@
+# Redirect root to login page
+/                     /index.html           200
+
+# Dashboard route
+/dashboard            /leeket-pricing-dashboard.html   200
