@@ -601,9 +601,9 @@
         <!-- Header avec version -->
         <div class="header">
             <span class="version-badge">v1.0.0</span>
-            <div style="position: absolute; top: 20px; left: 20px;">
+            <div style="position: absolute; top: 20px; left: 20px; z-index: 10;">
                 <span id="userInfo" style="color: white; opacity: 0.9; margin-right: 15px;"></span>
-                <button onclick="logout()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+                <button id="logoutBtn" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
                     <i class="fas fa-sign-out-alt"></i> Déconnexion
                 </button>
             </div>
@@ -903,6 +903,12 @@
 
             setupEventListeners();
             initializeCharts();
+
+            // Ajouter l'écouteur pour le bouton de déconnexion
+            const logoutBtn = document.getElementById('logoutBtn');
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', logout);
+            }
         });
 
         function checkAuthentication() {
@@ -978,14 +984,21 @@
 
             // Ajouter le bouton admin pour baila
             if (window.currentUsername === 'baila' && window.currentUserRole === 'admin') {
-                const headerDiv = document.querySelector('.header > div');
+                const headerDiv = document.querySelector('.header > div[style*="position: absolute"]');
                 if (headerDiv && !document.getElementById('adminButton')) {
                     const adminBtn = document.createElement('button');
                     adminBtn.id = 'adminButton';
-                    adminBtn.onclick = () => window.location.href = 'admin-panel.html';
-                    adminBtn.style = 'background: rgba(255,215,0,0.3); color: white; border: 1px solid rgba(255,215,0,0.5); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px;';
+                    adminBtn.onclick = function() {
+                        window.location.href = 'admin-panel.html';
+                    };
+                    adminBtn.style.cssText = 'background: rgba(255,215,0,0.3); color: white; border: 1px solid rgba(255,215,0,0.5); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px;';
                     adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
-                    headerDiv.insertBefore(adminBtn, headerDiv.lastElementChild);
+
+                    // Insérer avant le bouton de déconnexion
+                    const logoutBtn = document.getElementById('logoutBtn');
+                    if (logoutBtn) {
+                        headerDiv.insertBefore(adminBtn, logoutBtn);
+                    }
                 }
             }
         }
@@ -1062,7 +1075,24 @@
         }
 
         function configureGoogleSheets() {
-            window.open('google-sheets-config.html', '_blank');
+            // Vérifier si l'utilisateur a la permission
+            const savedPermissions = localStorage.getItem('leeketUserPermissions');
+            let hasAccess = false;
+
+            if (window.currentUsername === 'baila') {
+                hasAccess = true; // Baila a toujours accès
+            } else if (savedPermissions) {
+                const permissions = JSON.parse(savedPermissions);
+                if (permissions[window.currentUsername]) {
+                    hasAccess = permissions[window.currentUsername].hasGoogleSheetsAccess;
+                }
+            }
+
+            if (hasAccess) {
+                window.open('google-sheets-config.html', '_blank');
+            } else {
+                showNotification('error', 'Accès refusé', 'Vous n\'avez pas la permission de configurer Google Sheets');
+            }
         }
 
         function syncGoogleSheets() {
