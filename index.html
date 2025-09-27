@@ -275,12 +275,12 @@
     </div>
 
     <script>
-        // Configuration des utilisateurs autorisés
+        // Configuration des utilisateurs autorisés avec rôles
         const USERS = {
-            'amy': 'leeketdeamy',
-            'coumba': 'leeketdecoumba',
-            'amyb': 'leeketdemayb',
-            'baila': 'leeketdebaila'
+            'amy': { password: 'leeketdeamy', role: 'user' },
+            'coumba': { password: 'leeketdecoumba', role: 'user' },
+            'amyb': { password: 'leeketdemayb', role: 'user' },
+            'baila': { password: 'leeketdebaila', role: 'admin' }
         };
 
         // Vérifier si l'utilisateur est déjà connecté
@@ -318,10 +318,11 @@
             // Simuler un délai pour l'authentification (pour l'UX)
             setTimeout(() => {
                 // Vérifier les identifiants
-                if (USERS[username] && USERS[username] === password) {
+                if (USERS[username] && USERS[username].password === password) {
                     // Créer un token simple (en production, utilisez JWT)
                     const token = btoa(JSON.stringify({
                         username: username,
+                        role: USERS[username].role,
                         timestamp: Date.now(),
                         expires: Date.now() + (remember ? 7 * 24 * 60 * 60 * 1000 : 60 * 60 * 1000) // 7 jours ou 1 heure
                     }));

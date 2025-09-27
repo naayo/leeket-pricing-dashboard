@@ -914,16 +914,79 @@
                 return;
             }
 
-            // Afficher les informations de l'utilisateur
+            // Afficher les informations de l'utilisateur et gérer les permissions
             try {
                 const data = JSON.parse(atob(token));
                 const userInfo = document.getElementById('userInfo');
                 if (userInfo) {
                     userInfo.innerHTML = '<i class="fas fa-user-circle"></i> ' + data.username;
                 }
+
+                // Stocker le rôle de l'utilisateur pour un accès global
+                window.currentUserRole = data.role || 'user';
+                window.currentUsername = data.username;
+
+                // Appliquer les restrictions basées sur le rôle
+                applyRoleRestrictions();
             } catch (e) {
                 console.error('Erreur de lecture du token');
                 window.location.href = 'index.html';
+            }
+        }
+
+        function applyRoleRestrictions() {
+            // Vérifier les permissions sauvegardées
+            const savedPermissions = localStorage.getItem('leeketUserPermissions');
+            let hasGoogleSheetsAccess = false;
+
+            if (savedPermissions) {
+                const permissions = JSON.parse(savedPermissions);
+                if (permissions[window.currentUsername]) {
+                    hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess;
+                }
+            } else {
+                // Par défaut, seul baila a accès
+                hasGoogleSheetsAccess = window.currentUsername === 'baila' && window.currentUserRole === 'admin';
+            }
+
+            // Appliquer les restrictions
+            if (!hasGoogleSheetsAccess) {
+                // Masquer la section Google Sheets pour les utilisateurs non autorisés
+                const googleSheetsSetup = document.getElementById('googleSheetsSetup');
+                const googleSheetsStatus = document.getElementById('googleSheetsStatus');
+
+                if (googleSheetsSetup) {
+                    googleSheetsSetup.style.display = 'none';
+                }
+
+                if (googleSheetsStatus) {
+                    googleSheetsStatus.style.display = 'none';
+                }
+
+                // Modifier le titre de la section
+                const sectionTitle = document.querySelector('.upload-section h2');
+                if (sectionTitle) {
+                    sectionTitle.innerHTML = '<i class="fas fa-file-excel"></i> Importer vos données de prix';
+                }
+
+                // Masquer le séparateur "ou"
+                const separator = document.querySelector('.upload-section div[style*="text-align: center"]');
+                if (separator) {
+                    separator.style.display = 'none';
+                }
+            }
+
+            // Ajouter le bouton admin pour baila
+            if (window.currentUsername === 'baila' && window.currentUserRole === 'admin') {
+                const headerDiv = document.querySelector('.header > div');
+                if (headerDiv && !document.getElementById('adminButton')) {
+                    const adminBtn = document.createElement('button');
+                    adminBtn.id = 'adminButton';
+                    adminBtn.onclick = () => window.location.href = 'admin-panel.html';
+                    adminBtn.style = 'background: rgba(255,215,0,0.3); color: white; border: 1px solid rgba(255,215,0,0.5); padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; margin-right: 10px;';
+                    adminBtn.innerHTML = '<i class="fas fa-user-shield"></i> Admin';
+                    headerDiv.insertBefore(adminBtn, headerDiv.lastElementChild);
+                }
             }
         }
 
@@ -955,12 +1018,29 @@
         let autoSyncInterval = null;
 
         function checkGoogleSheetsConfig() {
+            // Vérifier si l'utilisateur a les permissions pour Google Sheets
+            let hasGoogleSheetsAccess = false;
+
+            const savedPermissions = localStorage.getItem('leeketUserPermissions');
+            if (savedPermissions) {
+                const permissions = JSON.parse(savedPermissions);
+                if (permissions[window.currentUsername]) {
+                    hasGoogleSheetsAccess = permissions[window.currentUsername].hasGoogleSheetsAccess;
+                }
+            } else {
+                // Par défaut, seul baila a accès
+                hasGoogleSheetsAccess = window.currentUsername === 'baila' && window.currentUserRole === 'admin';
+            }
+
             const config = localStorage.getItem('leeketGoogleSheetConfig');
 
-            if (config) {
-                // Configuration trouvée, masquer le setup et afficher le statut
-                document.getElementById('googleSheetsSetup').style.display = 'none';
-                document.getElementById('googleSheetsStatus').style.display = 'block';
+            if (config && hasGoogleSheetsAccess) {
+                // Configuration trouvée et utilisateur autorisé
+                const googleSheetsSetup = document.getElementById('googleSheetsSetup');
+                const googleSheetsStatus = document.getElementById('googleSheetsStatus');
+
+                if (googleSheetsSetup) googleSheetsSetup.style.display = 'none';
+                if (googleSheetsStatus) googleSheetsStatus.style.display = 'block';
 
                 // Charger les données depuis Google Sheets
                 syncGoogleSheets();
@@ -968,8 +1048,15 @@
                 // Configurer la synchronisation automatique (toutes les 5 minutes)
                 if (autoSyncInterval) clearInterval(autoSyncInterval);
                 autoSyncInterval = setInterval(syncGoogleSheets, 5 * 60 * 1000);
+            } else if (!hasGoogleSheetsAccess) {
+                // Utilisateur non autorisé - charger les données par défaut
+                loadDefaultData();
             } else {
-                // Pas de configuration, charger les données par défaut
+                // Configuration non trouvée mais utilisateur autorisé
+                if (hasGoogleSheetsAccess) {
+                    const googleSheetsSetup = document.getElementById('googleSheetsSetup');
+                    if (googleSheetsSetup) googleSheetsSetup.style.display = 'block';
+                }
                 loadDefaultData();
             }
         }

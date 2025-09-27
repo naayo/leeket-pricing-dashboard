@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panneau Admin - Leeket</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #f44336;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .admin-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .admin-card h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .users-table th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .users-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .users-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .role-badge.admin {
+            background: var(--danger);
+            color: white;
+        }
+
+        .role-badge.user {
+            background: var(--primary);
+            color: white;
+        }
+
+        .permission-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .permission-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .permission-section h3 {
+            color: var(--dark);
+            margin-bottom: 15px;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+                gap: 20px;
+            }
+
+            .users-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-user-shield"></i> Panneau d'Administration</h1>
+            <a href="leeket-pricing-dashboard.html" class="btn-back">
+                <i class="fas fa-arrow-left"></i> Retour au Dashboard
+            </a>
+        </div>
+
+        <div class="alert" id="alertMessage"></div>
+
+        <div class="admin-card">
+            <h2><i class="fas fa-users"></i> Gestion des Utilisateurs</h2>
+
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Utilisateur</th>
+                        <th>Rôle</th>
+                        <th>Accès Google Sheets</th>
+                        <th>Dernière connexion</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <!-- Contenu dynamique -->
+                </tbody>
+            </table>
+
+            <div class="permission-section">
+                <h3><i class="fas fa-key"></i> Permissions Google Sheets</h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Activez l'accès Google Sheets pour les utilisateurs sélectionnés. Seuls les utilisateurs autorisés pourront voir et utiliser la connexion Google Sheets.
+                </p>
+
+                <div id="permissionsList">
+                    <!-- Contenu dynamique -->
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="savePermissions()">
+                <i class="fas fa-save"></i> Sauvegarder les changements
+            </button>
+        </div>
+
+        <div class="admin-card">
+            <h2><i class="fas fa-chart-line"></i> Statistiques d'utilisation</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <i class="fas fa-users" style="font-size: 2em; color: var(--primary); margin-bottom: 10px;"></i>
+                    <h3 style="margin: 10px 0;">4</h3>
+                    <p style="color: #666;">Utilisateurs actifs</p>
+                </div>
+                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <i class="fas fa-database" style="font-size: 2em; color: var(--success); margin-bottom: 10px;"></i>
+                    <h3 style="margin: 10px 0;" id="sheetsAccessCount">1</h3>
+                    <p style="color: #666;">Accès Google Sheets</p>
+                </div>
+                <div style="text-align: center; padding: 20px; background: #f8f9fa; border-radius: 10px;">
+                    <i class="fas fa-sync-alt" style="font-size: 2em; color: var(--warning); margin-bottom: 10px;"></i>
+                    <h3 style="margin: 10px 0;" id="lastSyncTime">-</h3>
+                    <p style="color: #666;">Dernière synchronisation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vérifier l'authentification admin
+        function checkAdminAuth() {
+            const token = sessionStorage.getItem('leeketToken') || localStorage.getItem('leeketToken');
+
+            if (!token) {
+                window.location.href = 'index.html';
+                return false;
+            }
+
+            try {
+                const data = JSON.parse(atob(token));
+
+                // Seul baila peut accéder au panneau admin
+                if (data.username !== 'baila' || data.role !== 'admin') {
+                    window.location.href = 'leeket-pricing-dashboard.html';
+                    return false;
+                }
+
+                return true;
+            } catch (e) {
+                window.location.href = 'index.html';
+                return false;
+            }
+        }
+
+        // Définir les utilisateurs et leurs permissions
+        const USERS_DATA = {
+            'amy': {
+                role: 'user',
+                hasGoogleSheetsAccess: false,
+                lastLogin: '-'
+            },
+            'coumba': {
+                role: 'user',
+                hasGoogleSheetsAccess: false,
+                lastLogin: '-'
+            },
+            'amyb': {
+                role: 'user',
+                hasGoogleSheetsAccess: false,
+                lastLogin: '-'
+            },
+            'baila': {
+                role: 'admin',
+                hasGoogleSheetsAccess: true,
+                lastLogin: 'Maintenant'
+            }
+        };
+
+        // Charger les permissions sauvegardées
+        function loadSavedPermissions() {
+            const saved = localStorage.getItem('leeketUserPermissions');
+            if (saved) {
+                const permissions = JSON.parse(saved);
+                Object.keys(permissions).forEach(username => {
+                    if (USERS_DATA[username]) {
+                        USERS_DATA[username].hasGoogleSheetsAccess = permissions[username].hasGoogleSheetsAccess;
+                    }
+                });
+            }
+        }
+
+        // Afficher les utilisateurs
+        function displayUsers() {
+            const tbody = document.getElementById('usersTableBody');
+            const permissionsList = document.getElementById('permissionsList');
+
+            tbody.innerHTML = '';
+            permissionsList.innerHTML = '';
+
+            let sheetsAccessCount = 0;
+
+            Object.keys(USERS_DATA).forEach(username => {
+                const user = USERS_DATA[username];
+
+                if (user.hasGoogleSheetsAccess) sheetsAccessCount++;
+
+                // Ligne du tableau
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><strong>${username}</strong></td>
+                    <td><span class="role-badge ${user.role}">${user.role === 'admin' ? 'Administrateur' : 'Utilisateur'}</span></td>
+                    <td>${user.hasGoogleSheetsAccess ? '<i class="fas fa-check" style="color: var(--success);"></i>' : '<i class="fas fa-times" style="color: var(--danger);"></i>'}</td>
+                    <td>${user.lastLogin}</td>
+                `;
+                tbody.appendChild(row);
+
+                // Permission item (ne pas afficher baila car toujours admin)
+                if (username !== 'baila') {
+                    const permItem = document.createElement('div');
+                    permItem.className = 'permission-item';
+                    permItem.innerHTML = `
+                        <div>
+                            <strong>${username}</strong>
+                            <span style="color: #666; margin-left: 10px;">(${user.role === 'admin' ? 'Administrateur' : 'Utilisateur'})</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="perm_${username}" ${user.hasGoogleSheetsAccess ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    `;
+                    permissionsList.appendChild(permItem);
+                }
+            });
+
+            document.getElementById('sheetsAccessCount').textContent = sheetsAccessCount;
+        }
+
+        // Sauvegarder les permissions
+        function savePermissions() {
+            const permissions = {};
+
+            Object.keys(USERS_DATA).forEach(username => {
+                if (username !== 'baila') {
+                    const checkbox = document.getElementById(`perm_${username}`);
+                    if (checkbox) {
+                        USERS_DATA[username].hasGoogleSheetsAccess = checkbox.checked;
+                    }
+                }
+                permissions[username] = {
+                    hasGoogleSheetsAccess: USERS_DATA[username].hasGoogleSheetsAccess
+                };
+            });
+
+            // Sauvegarder dans localStorage
+            localStorage.setItem('leeketUserPermissions', JSON.stringify(permissions));
+
+            // Afficher le message de succès
+            showAlert('success', 'Les permissions ont été mises à jour avec succès!');
+
+            // Rafraîchir l'affichage
+            displayUsers();
+        }
+
+        // Afficher une alerte
+        function showAlert(type, message) {
+            const alertDiv = document.getElementById('alertMessage');
+            alertDiv.className = `alert ${type} show`;
+            alertDiv.innerHTML = `
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                ${message}
+            `;
+
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+            }, 3000);
+        }
+
+        // Charger la dernière synchronisation
+        function loadLastSync() {
+            const config = localStorage.getItem('leeketGoogleSheetConfig');
+            if (config) {
+                const now = new Date();
+                document.getElementById('lastSyncTime').textContent = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+            }
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            if (checkAdminAuth()) {
+                loadSavedPermissions();
+                displayUsers();
+                loadLastSync();
+            }
+        });
+    </script>
+</body>
+</html>
