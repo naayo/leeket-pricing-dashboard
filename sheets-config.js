@@ -4,7 +4,7 @@ const SHEETS_CONFIG = {
 	SHEET_ID: '1Mdss7oPMA-FuXsNVAtJBTeF15UQLZNy6',
 
 	// Sheet name
-	SHEET_NAME: 'Sheet1',
+	SHEET_NAME: 'prix',
 
 	// API configuration
 	API_KEY: 'AIzaSyBNlYH01_9Hc5S1J9vuFmu2nUqBZJNAXxs', // Public API key for Sheets API
@@ -23,7 +23,7 @@ function loadSheetConfig() {
 		try {
 			const config = JSON.parse(saved);
 			SHEETS_CONFIG.SHEET_ID = config.sheetId || '';
-			SHEETS_CONFIG.SHEET_NAME = config.sheetName || 'Sheet1';
+			SHEETS_CONFIG.SHEET_NAME = config.sheetName || 'prix';
 			return true;
 		} catch (e) {
 			console.error('Error loading sheet config:', e);
@@ -33,7 +33,7 @@ function loadSheetConfig() {
 }
 
 // Save configuration
-function saveSheetConfig(sheetId, sheetName = 'Sheet1') {
+function saveSheetConfig(sheetId, sheetName = 'prix') {
 	const config = {
 		sheetId: sheetId,
 		sheetName: sheetName,
