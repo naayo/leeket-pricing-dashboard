@@ -20,6 +20,7 @@
     <!-- Application Scripts -->
     <script src="auth.js"></script>
     <script src="sheets-config.js"></script>
+    <script src="data-fetcher.js"></script>
     
     <style>
         * {
@@ -1210,42 +1211,53 @@
         }
 
         function syncGoogleSheets() {
-            const configStr = localStorage.getItem('leeketGoogleSheetConfig');
-            if (!configStr) {
+            // Check if Google Sheets is configured
+            if (!isSheetConfigured()) {
                 loadDefaultData();
                 return;
             }
 
-            const config = JSON.parse(configStr);
             const loader = document.getElementById('loader');
             const uploadArea = document.getElementById('uploadArea');
 
-            // Afficher le loader
-            loader.classList.add('active');
+            // Show loader
+            if (loader) loader.classList.add('active');
             if (uploadArea) uploadArea.style.opacity = '0.5';
 
-            // Mettre à jour le statut
+            // Update sync button status
             const syncButton = document.querySelector('button[onclick="syncGoogleSheets()"]');
             if (syncButton) {
                 syncButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Synchronisation...';
                 syncButton.disabled = true;
             }
 
-            // Utiliser l'API Google Sheets
-            fetchGoogleSheetData(config)
-                .then(data => {
-                    processGoogleSheetData(data);
+            // Use the data-fetcher to load data from Google Sheets
+            leeketDataFetcher.loadData()
+                .then(processedData => {
+                    // Convert processed data to the format expected by the dashboard
+                    const products = processedData.products.map(product => ({
+                        name: product.name,
+                        marketPrice: product.price,
+                        cost: product.cost,
+                        suggestedPrice: product.price,
+                        margin: parseFloat(product.marginPercent),
+                        volume: product.quantity || Math.floor(Math.random() * 300) + 100,
+                        category: product.category || 'Non catégorisé'
+                    }));
+
+                    appState.products = products;
+                    updateDashboard(products);
                     updateLastSyncTime();
-                    showNotification('success', 'Synchronisation réussie', `${appState.products.length} produits mis à jour`);
+                    showNotification('success', 'Synchronisation réussie', `${products.length} produits mis à jour depuis Google Sheets`);
                 })
                 .catch(error => {
                     console.error('Erreur de synchronisation:', error);
-                    showNotification('error', 'Erreur de synchronisation', 'Impossible de récupérer les données depuis Google Sheets');
-                    // Charger les données par défaut en cas d'erreur
+                    showNotification('error', 'Erreur de synchronisation', 'Utilisation des données de secours');
+                    // Load fallback data in case of error
                     loadDefaultData();
                 })
                 .finally(() => {
-                    loader.classList.remove('active');
+                    if (loader) loader.classList.remove('active');
                     if (uploadArea) uploadArea.style.opacity = '1';
                     if (syncButton) {
                         syncButton.innerHTML = '<i class="fas fa-sync-alt"></i> Synchroniser';
@@ -1383,23 +1395,43 @@
         }
 
         function loadDefaultData() {
-            // Données par défaut basées sur votre sondage
-            const defaultProducts = [
-                { name: 'Thieboudienne', marketPrice: 3500, suggestedPrice: 4200, margin: 35, volume: 450, category: 'Plats principaux' },
-                { name: 'Yassa Poulet', marketPrice: 3000, suggestedPrice: 3800, margin: 37, volume: 420, category: 'Plats principaux' },
-                { name: 'Mafé', marketPrice: 2800, suggestedPrice: 3500, margin: 32, volume: 280, category: 'Plats principaux' },
-                { name: 'Ceebu Jen Blanc', marketPrice: 2500, suggestedPrice: 3200, margin: 30, volume: 280, category: 'Plats principaux' },
-                { name: 'Sup Kanja', marketPrice: 2600, suggestedPrice: 3300, margin: 31, volume: 250, category: 'Plats principaux' },
-                { name: 'Thiou', marketPrice: 2700, suggestedPrice: 3400, margin: 31, volume: 230, category: 'Plats principaux' },
-                { name: 'Caldou', marketPrice: 2900, suggestedPrice: 3700, margin: 33, volume: 230, category: 'Plats principaux' },
-                { name: 'Domoda', marketPrice: 2400, suggestedPrice: 3100, margin: 29, volume: 200, category: 'Plats principaux' },
-                { name: 'Firire', marketPrice: 2200, suggestedPrice: 2900, margin: 28, volume: 130, category: 'Plats principaux' },
-                { name: 'Fataya', marketPrice: 800, suggestedPrice: 1200, margin: 45, volume: 200, category: 'Snacks' },
-                { name: 'Panier Mix (5 produits)', marketPrice: 12000, suggestedPrice: 14500, margin: 40, volume: 150, category: 'Paniers' }
-            ];
+            // Use fallback data from data-fetcher if available
+            try {
+                const fallbackData = leeketDataFetcher.getFallbackData();
+                const products = fallbackData.products.map(product => ({
+                    name: product.name,
+                    marketPrice: product.price,
+                    cost: product.cost,
+                    suggestedPrice: product.price,
+                    margin: parseFloat(product.marginPercent),
+                    volume: product.quantity || Math.floor(Math.random() * 300) + 100,
+                    category: product.category || 'Non catégorisé'
+                }));
 
-            appState.products = defaultProducts;
-            updateDashboard(defaultProducts);
+                appState.products = products;
+                updateDashboard(products);
+                console.log('Loaded fallback data from data-fetcher');
+            } catch (error) {
+                console.error('Error loading fallback data:', error);
+
+                // Données par défaut basées sur votre sondage
+                const defaultProducts = [
+                    { name: 'Thieboudienne', marketPrice: 3500, suggestedPrice: 4200, margin: 35, volume: 450, category: 'Plats principaux' },
+                    { name: 'Yassa Poulet', marketPrice: 3000, suggestedPrice: 3800, margin: 37, volume: 420, category: 'Plats principaux' },
+                    { name: 'Mafé', marketPrice: 2800, suggestedPrice: 3500, margin: 32, volume: 280, category: 'Plats principaux' },
+                    { name: 'Ceebu Jen Blanc', marketPrice: 2500, suggestedPrice: 3200, margin: 30, volume: 280, category: 'Plats principaux' },
+                    { name: 'Sup Kanja', marketPrice: 2600, suggestedPrice: 3300, margin: 31, volume: 250, category: 'Plats principaux' },
+                    { name: 'Thiou', marketPrice: 2700, suggestedPrice: 3400, margin: 31, volume: 230, category: 'Plats principaux' },
+                    { name: 'Caldou', marketPrice: 2900, suggestedPrice: 3700, margin: 33, volume: 230, category: 'Plats principaux' },
+                    { name: 'Domoda', marketPrice: 2400, suggestedPrice: 3100, margin: 29, volume: 200, category: 'Plats principaux' },
+                    { name: 'Firire', marketPrice: 2200, suggestedPrice: 2900, margin: 28, volume: 130, category: 'Plats principaux' },
+                    { name: 'Fataya', marketPrice: 800, suggestedPrice: 1200, margin: 45, volume: 200, category: 'Snacks' },
+                    { name: 'Panier Mix (5 produits)', marketPrice: 12000, suggestedPrice: 14500, margin: 40, volume: 150, category: 'Paniers' }
+                ];
+
+                appState.products = defaultProducts;
+                updateDashboard(defaultProducts);
+            }
         }
 
         // ==================== GESTION DES FICHIERS ====================
